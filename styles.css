@@ -147,10 +147,10 @@ a {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 28px;
+  gap: 18px;
   width: min(1180px, calc(100% - 44px));
-  min-height: 72px;
-  padding: 10px 14px 10px 16px;
+  min-height: 68px;
+  padding: 9px 12px 9px 14px;
   border: 1px solid var(--line-green);
   border-radius: 8px;
   background: rgba(4, 9, 8, 0.72);
@@ -180,11 +180,18 @@ a {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 18px;
+  gap: 4px;
+  min-height: 42px;
+  padding: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.025);
 }
 
 .nav-links a {
-  padding: 12px 8px;
+  position: relative;
+  padding: 10px 14px;
+  border-radius: 6px;
   color: var(--soft);
   font-size: 14px;
   font-weight: 800;
@@ -193,6 +200,26 @@ a {
 .nav-links a:hover,
 .nav-links a:focus-visible {
   color: var(--text);
+  background: rgba(102, 242, 189, 0.08);
+}
+
+.nav-links a::after {
+  position: absolute;
+  left: 14px;
+  right: 14px;
+  bottom: 6px;
+  height: 1px;
+  content: "";
+  background: linear-gradient(90deg, transparent, rgba(102, 242, 189, 0.78), transparent);
+  opacity: 0;
+  transform: scaleX(0.45);
+  transition: opacity 160ms ease, transform 160ms ease;
+}
+
+.nav-links a:hover::after,
+.nav-links a:focus-visible::after {
+  opacity: 1;
+  transform: scaleX(1);
 }
 
 .actions {
@@ -221,7 +248,7 @@ a {
 .hero {
   position: relative;
   min-height: 100svh;
-  padding: 118px 0 44px;
+  padding: 112px 0 44px;
   overflow: hidden;
 }
 
@@ -231,22 +258,23 @@ a {
   display: grid;
   place-items: center;
   width: 100%;
-  min-height: clamp(74px, 8vw, 108px);
+  min-height: clamp(86px, 9vw, 124px);
   margin-bottom: clamp(12px, 2vw, 24px);
-  padding: 10px 18px;
+  padding: 8px 14px;
   border: 1px solid rgba(102, 242, 189, 0.18);
   border-radius: 8px;
   background:
-    linear-gradient(90deg, rgba(0, 0, 0, 0.7), rgba(31, 97, 76, 0.45), rgba(0, 0, 0, 0.64)),
+    linear-gradient(90deg, rgba(0, 0, 0, 0.72), rgba(31, 97, 76, 0.36), rgba(0, 0, 0, 0.66)),
     rgba(0, 0, 0, 0.32);
   box-shadow: 0 18px 70px rgba(0, 0, 0, 0.42), inset 0 0 40px rgba(102, 242, 189, 0.08);
 }
 
 .brand-banner img {
-  width: min(92%, 980px);
-  max-height: 76px;
+  width: min(98%, 1320px);
+  max-height: 104px;
   object-fit: contain;
-  filter: drop-shadow(0 0 30px rgba(102, 242, 189, 0.28));
+  opacity: 0.72;
+  filter: drop-shadow(0 0 26px rgba(102, 242, 189, 0.2));
 }
 
 .orbital-stage {
@@ -345,8 +373,7 @@ a {
 
 .status-pill,
 .hero-badges span,
-.approval-toast,
-.launch-card {
+.approval-toast {
   border: 1px solid var(--line);
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.055);
@@ -376,8 +403,7 @@ a {
 }
 
 .status-pill p,
-.approval-toast p,
-.launch-card p {
+.approval-toast p {
   margin: 0;
 }
 
@@ -587,39 +613,34 @@ h3 {
   vertical-align: -3px;
 }
 
-.launch-card {
-  position: absolute;
-  right: 36px;
-  top: -26px;
-  z-index: 8;
-  display: grid;
-  grid-template-columns: 40px auto;
-  gap: 12px;
-  align-items: center;
-  min-width: 170px;
-  min-height: 74px;
-  padding: 10px 18px;
-  border-radius: 10px;
-  background: rgba(23, 23, 23, 0.86);
-}
-
-.launch-card span {
-  display: grid;
-  place-items: center;
-  width: 40px;
-  height: 40px;
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.08);
-  font-size: 22px;
-  font-weight: 900;
-}
-
-.launch-card p,
 .approval-toast p {
   color: var(--soft);
   font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
   font-size: 12px;
   font-weight: 900;
+}
+
+.quality-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin: 18px 0;
+}
+
+.quality-grid span {
+  display: grid;
+  place-items: center;
+  min-height: 44px;
+  margin: 0;
+  padding: 8px;
+  border: 1px solid rgba(102, 242, 189, 0.14);
+  border-radius: 8px;
+  color: rgba(244, 244, 242, 0.72);
+  background: rgba(102, 242, 189, 0.05);
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  font-size: 11px;
+  font-weight: 900;
+  text-align: center;
 }
 
 .approval-toast {
@@ -858,24 +879,38 @@ h3 {
   }
 
   .topbar {
-    align-items: flex-start;
-    flex-wrap: wrap;
+    align-items: center;
+    flex-wrap: nowrap;
+    min-height: 62px;
   }
 
   .nav-links {
-    order: 3;
-    width: 100%;
-    justify-content: flex-start;
-    gap: 8px;
-    overflow-x: auto;
+    position: fixed;
+    left: 11px;
+    right: 11px;
+    top: 82px;
+    justify-content: space-between;
+    gap: 2px;
+    min-height: 42px;
+    padding: 3px;
+    overflow: hidden;
+    background: rgba(4, 9, 8, 0.68);
+    backdrop-filter: blur(16px);
+  }
+
+  .nav-links a {
+    flex: 1;
+    padding: 10px 6px;
+    font-size: 12px;
+    text-align: center;
   }
 
   .hero {
-    padding-top: 146px;
+    padding-top: 136px;
   }
 
   .terminal-stack {
-    min-height: 420px;
+    min-height: 390px;
   }
 
   .service-grid,
@@ -897,31 +932,44 @@ h3 {
   .topbar {
     top: 10px;
     width: min(100% - 22px, 1180px);
+    gap: 8px;
+    padding: 8px;
   }
 
   .brand span {
-    font-size: 14px;
+    font-size: 13px;
   }
 
   .brand img {
+    width: 36px;
+    height: 36px;
+  }
+
+  .actions {
+    padding: 2px;
+  }
+
+  .lang-button {
     width: 40px;
-    height: 40px;
+    min-height: 36px;
+    font-size: 12px;
   }
 
   .hero {
     min-height: auto;
-    padding-top: 166px;
+    padding-top: 136px;
   }
 
   .brand-banner {
-    min-height: 76px;
-    padding: 10px;
+    min-height: 92px;
+    padding: 8px;
   }
 
   .brand-banner img {
-    width: 100%;
+    width: 112%;
     max-width: none;
-    max-height: 52px;
+    max-height: 76px;
+    opacity: 0.68;
   }
 
   h1 {
@@ -944,24 +992,24 @@ h3 {
   }
 
   .terminal-stack {
-    min-height: 430px;
+    min-height: 390px;
   }
 
   .terminal-body {
-    padding: 22px 18px 28px;
+    padding: 20px 16px 24px;
   }
 
   .terminal-body p {
     font-size: 13px;
   }
 
-  .launch-card {
-    right: 8px;
-  }
-
   .approval-toast {
     left: 8px;
     bottom: 18px;
+  }
+
+  .quality-grid {
+    grid-template-columns: 1fr;
   }
 
   .scroll-mark {
