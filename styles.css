@@ -961,33 +961,60 @@ h3 {
   }
 
   .topbar {
+    position: relative;
+    top: auto;
+    left: auto;
+    width: 100%;
     grid-template-columns: 1fr auto;
     min-height: 62px;
+    transform: none;
+  }
+
+  .brand {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .actions {
+    grid-column: 2;
+    grid-row: 1;
+    justify-self: end;
   }
 
   .nav-links {
-    position: fixed;
-    left: 11px;
-    right: 11px;
-    top: 82px;
+    position: static;
+    grid-column: 1 / -1;
+    grid-row: 2;
+    width: 100%;
     justify-content: space-between;
     gap: 2px;
     min-height: 42px;
+    margin-top: 8px;
     padding: 3px;
     overflow: hidden;
-    background: rgba(4, 9, 8, 0.72);
-    backdrop-filter: blur(16px);
+    border-color: rgba(103, 255, 196, 0.22);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.03);
+    box-shadow: none;
+    backdrop-filter: none;
   }
 
   .nav-links a {
     flex: 1;
-    padding: 10px 6px;
-    font-size: 12px;
+    display: grid;
+    place-items: center;
+    min-height: 36px;
+    padding: 8px 4px;
+    font-size: 11px;
     text-align: center;
   }
 
+  .nav-links a::after {
+    display: none;
+  }
+
   .hero {
-    padding-top: 136px;
+    padding-top: 18px;
   }
 
   .command-deck {
@@ -1001,8 +1028,7 @@ h3 {
   }
 
   .topbar {
-    top: 10px;
-    width: min(100% - 22px, 1180px);
+    top: auto;
     gap: 8px;
     padding: 8px;
   }
@@ -1028,7 +1054,7 @@ h3 {
 
   .hero {
     min-height: auto;
-    padding-top: 136px;
+    padding-top: 18px;
   }
 
   .brand-banner {
