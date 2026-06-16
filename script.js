@@ -1,43 +1,52 @@
-﻿const translations = {
+const translations = {
   ru: {
     navServices: "Услуги",
     navCases: "Кейсы",
     navProcess: "Процесс",
     navContact: "Контакт",
-    heroEyebrow: "Главная компания Починкова Максима Сергеевича",
-    heroTitle: "Строим цифровые продукты, которые выглядят крупно с первого экрана.",
-    heroText: "W1ZZYDEV создает сайты, интерфейсы, автоматизацию и будущие AI-системы для бизнеса, которому нужен не шаблон, а сильный технологичный образ.",
-    heroCta: "Начать проект",
-    heroSecondary: "Смотреть направление",
-    metricOne: "единый стиль бренда",
-    metricTwo: "двуязычный запуск RU/EN",
-    metricThree: "место для кейсов и роста",
-    servicesEyebrow: "Что строим",
-    servicesTitle: "Сайт компании как витрина силы, а не просто страница в интернете.",
-    serviceOneTitle: "Корпоративные сайты",
-    serviceOneText: "Главные страницы, лендинги, портфолио и масштабируемые разделы под будущие услуги.",
-    serviceTwoTitle: "Интерфейсы и дизайн-системы",
-    serviceTwoText: "Темные технологичные интерфейсы, адаптивные сетки, аккуратная анимация и брендовый визуальный язык.",
-    serviceThreeTitle: "Автоматизация бизнеса",
-    serviceThreeText: "Формы, заявки, внутренние панели и процессы, которые можно развивать вместе с компанией.",
-    casesEyebrow: "Будущие кейсы",
-    casesTitle: "Раздел готов для выполненных работ, когда вы начнете добавлять проекты.",
-    casesText: "Сюда можно встроить карточки сайтов, сервисов, CRM, автоматизаций и AI-инструментов: с результатами, скриншотами и ссылками.",
+    statusText: "Принимаем новые проекты - 2026",
+    heroTitle: "Разработка цифровых систем, которые выглядят как бренд будущего.",
+    heroText: "W1ZZYDEV создает сайты, интерфейсы, автоматизацию и AI-инструменты с сильной визуальной подачей, понятной логикой и фундаментом для большой компании.",
+    badgeOne: "3 проекта в работе",
+    badgeTwo: "2 слота свободны",
+    heroCta: "Обсудить проект",
+    heroSecondary: "Смотреть услуги",
+    statOne: "идей в разработке",
+    statTwo: "цифровой режим",
+    statThree: "две версии сайта",
+    launchText: "дней до рывка",
+    terminalOne: "✓ Анализ ниши и визуального кода",
+    terminalTwo: "✓ Прототип структуры компании",
+    terminalThree: "✓ Дизайн + контент + анимации",
+    terminalFour: "✓ Публикация через GitHub Pages",
+    terminalFive: "Сайт готовится к большому запуску",
+    toastText: "Проект усилен брендом W1ZZYDEV",
+    servicesEyebrow: "Направления",
+    servicesTitle: "Не визитка. Экосистема, которую можно расширять годами.",
+    serviceOneTitle: "Сайты и платформы",
+    serviceOneText: "Премиальные главные страницы, корпоративные сайты, лендинги и будущие разделы под продукты.",
+    serviceTwoTitle: "AI и автоматизация",
+    serviceTwoText: "Инструменты, формы, заявки, CRM-логика и сценарии, которые экономят время и усиливают бизнес.",
+    serviceThreeTitle: "Интерфейсы продукта",
+    serviceThreeText: "Темные технологичные интерфейсы, панели управления, дизайн-системы и адаптивные экраны.",
+    casesEyebrow: "Кейсы скоро",
+    casesTitle: "Здесь будут работы, которые докажут масштаб W1ZZYDEV.",
+    casesText: "Раздел готов под сайты, сервисы, автоматизации, AI-функции и визуальные кейсы с результатами, скриншотами и ссылками.",
     caseOne: "Сайты",
-    caseTwo: "Приложения",
+    caseTwo: "Сервисы",
     caseThree: "Автоматизация",
-    caseFour: "AI-функции",
-    processEyebrow: "Как работаем",
-    processTitle: "От сильной первой версии к большой компании.",
-    stepOneTitle: "Фиксируем образ",
-    stepOneText: "Берем баннер и логотип как основу: темный фон, зеленое свечение, кодовый характер.",
-    stepTwoTitle: "Собираем структуру",
-    stepTwoText: "Главный экран, услуги, кейсы, процесс, основатель, контакт и будущие страницы.",
-    stepThreeTitle: "Расширяем систему",
-    stepThreeText: "Добавляем настоящие работы, формы, аналитику, SEO и новые языковые версии.",
+    caseFour: "AI",
+    processEyebrow: "Процесс",
+    processTitle: "Каждый новый блок должен усиливать ощущение большой компании.",
+    stepOneTitle: "Образ",
+    stepOneText: "Темная технологичная сцена, зеленый брендовый свет, код и ощущение будущего.",
+    stepTwoTitle: "Система",
+    stepTwoText: "Главная, услуги, кейсы, процесс, основатель, контакты и будущие отдельные страницы.",
+    stepThreeTitle: "Рост",
+    stepThreeText: "Добавляем портфолио, SEO, аналитику, заявки, домен и новые продуктовые направления.",
     founderEyebrow: "Основатель",
     founderTitle: "Починков Максим Сергеевич",
-    founderText: "W1ZZYDEV создается как большая технологичная компания: с сильным брендом, понятной подачей и местом для будущих продуктов.",
+    founderText: "W1ZZYDEV собирается как технологичная компания с амбицией вырасти в крупный бренд: сильный сайт, понятная подача и место для будущих продуктов.",
     contactCta: "Связаться"
   },
   en: {
@@ -45,40 +54,49 @@
     navCases: "Cases",
     navProcess: "Process",
     navContact: "Contact",
-    heroEyebrow: "Main company of Maksim Sergeevich Pochinkov",
-    heroTitle: "We build digital products that feel powerful from the first screen.",
-    heroText: "W1ZZYDEV creates websites, interfaces, automation and future AI systems for businesses that need a strong technological identity, not a template.",
-    heroCta: "Start a project",
-    heroSecondary: "View direction",
-    metricOne: "unified brand style",
-    metricTwo: "bilingual RU/EN launch",
-    metricThree: "space for cases and growth",
-    servicesEyebrow: "What we build",
-    servicesTitle: "A company website as a display of strength, not just a page online.",
-    serviceOneTitle: "Corporate websites",
-    serviceOneText: "Homepages, landing pages, portfolios and scalable sections for future services.",
-    serviceTwoTitle: "Interfaces and design systems",
-    serviceTwoText: "Dark technological interfaces, responsive grids, refined animation and a branded visual language.",
-    serviceThreeTitle: "Business automation",
-    serviceThreeText: "Forms, requests, internal dashboards and processes that can grow with the company.",
-    casesEyebrow: "Future cases",
-    casesTitle: "This section is ready for completed work when you start adding projects.",
-    casesText: "It can hold cards for websites, services, CRM systems, automations and AI tools with results, screenshots and links.",
+    statusText: "Accepting new projects - 2026",
+    heroTitle: "Digital systems that look like a brand from the future.",
+    heroText: "W1ZZYDEV builds websites, interfaces, automation and AI tools with strong visual direction, clear logic and a foundation for a large company.",
+    badgeOne: "3 projects active",
+    badgeTwo: "2 slots open",
+    heroCta: "Discuss project",
+    heroSecondary: "View services",
+    statOne: "ideas in progress",
+    statTwo: "digital mode",
+    statThree: "site versions",
+    launchText: "days to launch",
+    terminalOne: "✓ Niche and visual code analysis",
+    terminalTwo: "✓ Company structure prototype",
+    terminalThree: "✓ Design + content + animation",
+    terminalFour: "✓ GitHub Pages publishing",
+    terminalFive: "The site is preparing for a major launch",
+    toastText: "Project amplified by W1ZZYDEV brand",
+    servicesEyebrow: "Directions",
+    servicesTitle: "Not a business card. An ecosystem that can grow for years.",
+    serviceOneTitle: "Websites and platforms",
+    serviceOneText: "Premium homepages, corporate websites, landing pages and future sections for products.",
+    serviceTwoTitle: "AI and automation",
+    serviceTwoText: "Tools, forms, requests, CRM logic and scenarios that save time and strengthen the business.",
+    serviceThreeTitle: "Product interfaces",
+    serviceThreeText: "Dark technological interfaces, dashboards, design systems and responsive screens.",
+    casesEyebrow: "Cases soon",
+    casesTitle: "This is where work will prove the scale of W1ZZYDEV.",
+    casesText: "The section is ready for websites, services, automations, AI features and visual case studies with results, screenshots and links.",
     caseOne: "Websites",
-    caseTwo: "Apps",
+    caseTwo: "Services",
     caseThree: "Automation",
-    caseFour: "AI features",
-    processEyebrow: "How we work",
-    processTitle: "From a strong first version to a large company.",
-    stepOneTitle: "Lock the image",
-    stepOneText: "We use the banner and logo as the base: dark background, green glow and code-driven character.",
-    stepTwoTitle: "Build the structure",
-    stepTwoText: "Hero, services, cases, process, founder, contact and future pages.",
-    stepThreeTitle: "Expand the system",
-    stepThreeText: "Add real work, forms, analytics, SEO and new language versions.",
+    caseFour: "AI",
+    processEyebrow: "Process",
+    processTitle: "Every new block should increase the feeling of a large company.",
+    stepOneTitle: "Image",
+    stepOneText: "A dark technological scene, green brand light, code and the feeling of the future.",
+    stepTwoTitle: "System",
+    stepTwoText: "Home, services, cases, process, founder, contacts and future separate pages.",
+    stepThreeTitle: "Growth",
+    stepThreeText: "Add portfolio, SEO, analytics, requests, domain and new product directions.",
     founderEyebrow: "Founder",
     founderTitle: "Maksim Sergeevich Pochinkov",
-    founderText: "W1ZZYDEV is being created as a large technology company with a strong brand, clear presentation and room for future products.",
+    founderText: "W1ZZYDEV is being built as a technology company with the ambition to grow into a major brand: a strong site, clear presentation and room for future products.",
     contactCta: "Contact"
   }
 };
@@ -109,3 +127,106 @@ buttons.forEach((button) => {
 });
 
 setLanguage(localStorage.getItem("w1zzydev-language") || "ru");
+
+const canvas = document.getElementById("matrixCanvas");
+const ctx = canvas.getContext("2d");
+const glyphs = "01{}[]<>/\\_W1ZZYDEVAI";
+let columns = [];
+let width = 0;
+let height = 0;
+
+function resizeCanvas() {
+  const ratio = Math.min(window.devicePixelRatio || 1, 2);
+  width = window.innerWidth;
+  height = window.innerHeight;
+  canvas.width = Math.floor(width * ratio);
+  canvas.height = Math.floor(height * ratio);
+  canvas.style.width = `${width}px`;
+  canvas.style.height = `${height}px`;
+  ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+
+  const count = Math.ceil(width / 24);
+  columns = Array.from({ length: count }, (_, index) => ({
+    x: index * 24,
+    y: Math.random() * height,
+    speed: 0.35 + Math.random() * 0.9,
+    size: 11 + Math.random() * 7,
+    alpha: 0.1 + Math.random() * 0.36
+  }));
+}
+
+function drawMatrix() {
+  ctx.clearRect(0, 0, width, height);
+  ctx.font = "14px Consolas, monospace";
+
+  columns.forEach((column) => {
+    const symbol = glyphs[Math.floor(Math.random() * glyphs.length)];
+    ctx.font = `${column.size}px Consolas, monospace`;
+    ctx.fillStyle = `rgba(245, 245, 245, ${column.alpha})`;
+    ctx.shadowColor = "rgba(102, 242, 189, 0.65)";
+    ctx.shadowBlur = 8;
+    ctx.fillText(symbol, column.x, column.y);
+    column.y += column.speed * 9;
+
+    if (column.y > height + 60) {
+      column.y = -40;
+      column.speed = 0.35 + Math.random() * 0.9;
+      column.alpha = 0.1 + Math.random() * 0.36;
+    }
+  });
+
+  requestAnimationFrame(drawMatrix);
+}
+
+resizeCanvas();
+drawMatrix();
+window.addEventListener("resize", resizeCanvas);
+
+const cursorCore = document.querySelector(".cursor-core");
+const cursorRing = document.querySelector(".cursor-ring");
+const trailSymbols = ["0", "1", "{", "}", "<", ">", "/", "W", "D"];
+let cursorX = window.innerWidth / 2;
+let cursorY = window.innerHeight / 2;
+let ringX = cursorX;
+let ringY = cursorY;
+let lastTrail = 0;
+
+function moveCursor() {
+  ringX += (cursorX - ringX) * 0.16;
+  ringY += (cursorY - ringY) * 0.16;
+
+  cursorCore.style.transform = `translate3d(${cursorX}px, ${cursorY}px, 0) translate(-50%, -50%)`;
+  cursorRing.style.transform = `translate3d(${ringX}px, ${ringY}px, 0) translate(-50%, -50%)`;
+  requestAnimationFrame(moveCursor);
+}
+
+function spawnTrail(x, y) {
+  const node = document.createElement("span");
+  node.className = "cursor-code";
+  node.textContent = trailSymbols[Math.floor(Math.random() * trailSymbols.length)];
+  node.style.left = `${x + (Math.random() * 20 - 10)}px`;
+  node.style.top = `${y + (Math.random() * 20 - 10)}px`;
+  node.style.setProperty("--trail-x", `${Math.random() * 46 - 23}px`);
+  document.body.appendChild(node);
+  window.setTimeout(() => node.remove(), 920);
+}
+
+window.addEventListener("pointermove", (event) => {
+  cursorX = event.clientX;
+  cursorY = event.clientY;
+  document.body.style.setProperty("--cursor-x", `${cursorX}px`);
+  document.body.style.setProperty("--cursor-y", `${cursorY}px`);
+
+  const now = performance.now();
+  if (now - lastTrail > 38 && window.matchMedia("(pointer: fine)").matches) {
+    spawnTrail(cursorX, cursorY);
+    lastTrail = now;
+  }
+});
+
+document.querySelectorAll("a, button").forEach((element) => {
+  element.addEventListener("mouseenter", () => document.body.classList.add("is-hovering"));
+  element.addEventListener("mouseleave", () => document.body.classList.remove("is-hovering"));
+});
+
+moveCursor();
