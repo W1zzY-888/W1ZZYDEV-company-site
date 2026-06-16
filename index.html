@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>W1ZZYDEV - digital systems studio</title>
-  <meta name="description" content="W1ZZYDEV builds premium websites, product interfaces, automations and handcrafted digital systems." />
+  <title>W1ZZYDEV - digital production studio</title>
+  <meta name="description" content="W1ZZYDEV is a digital production studio creating websites, interfaces, automation and scalable web systems by hand." />
   <link rel="icon" type="image/png" href="assets/favicon.png" />
-  <link rel="stylesheet" href="styles.css?v=20260617-2" />
+  <link rel="stylesheet" href="styles.css?v=20260617-3" />
 </head>
 <body>
   <canvas class="matrix-canvas" id="matrixCanvas" aria-hidden="true"></canvas>
@@ -21,10 +21,10 @@
       </a>
 
       <nav class="nav-links" aria-label="Site sections">
+        <a href="#studio" data-i18n="navStudio">Студия</a>
         <a href="#services" data-i18n="navServices">Услуги</a>
-        <a href="#cases" data-i18n="navCases">Кейсы</a>
-        <a href="#process" data-i18n="navProcess">Процесс</a>
-        <a href="#contact" data-i18n="navContact">Контакт</a>
+        <a href="#systems" data-i18n="navSystems">Система</a>
+        <a href="#contact" data-i18n="navContact">Контакты</a>
       </nav>
 
       <div class="actions" aria-label="Language switcher">
@@ -35,163 +35,168 @@
 
     <main id="home">
       <section class="hero">
-        <div class="brand-banner">
+        <div class="brand-banner" aria-label="W1ZZYDEV banner">
           <img src="assets/w1zzydev-banner.png" alt="W1ZZYDEV banner" />
         </div>
 
-        <div class="orbital-stage" aria-hidden="true">
-          <span class="orbit orbit-one"></span>
-          <span class="orbit orbit-two"></span>
-          <span class="orbit orbit-three"></span>
-          <span class="orbit orbit-four"></span>
-          <span class="orbit-dot dot-one"></span>
-          <span class="orbit-dot dot-two"></span>
-          <span class="orbit-dot dot-three"></span>
-        </div>
-
-        <div class="hero-content">
+        <div class="hero-grid">
           <div class="hero-copy">
             <div class="status-pill">
               <span></span>
-              <p data-i18n="statusText">Принимаем новые проекты - 2026</p>
+              <p data-i18n="statusText">Цифровая студия ручной разработки - 2026</p>
             </div>
 
-            <h1 data-i18n="heroTitle">Разработка цифровых систем, которые выглядят как бренд будущего.</h1>
-            <p class="hero-text" data-i18n="heroText">W1ZZYDEV создает сайты, интерфейсы и автоматизацию с сильной визуальной подачей, точной ручной сборкой и фундаментом для большой компании.</p>
-
-            <div class="hero-badges">
-              <span data-i18n="badgeOne">3 проекта в работе</span>
-              <span data-i18n="badgeTwo">2 слота свободны</span>
-            </div>
+            <h1 data-i18n="heroTitle">Собираем сайты и веб-системы, которые выглядят как уровень большой компании.</h1>
+            <p class="hero-text" data-i18n="heroText">W1ZZYDEV проектирует визуальный образ, структуру, интерфейсы и рабочие сценарии так, чтобы сайт был не визиткой, а основой будущей цифровой экосистемы.</p>
 
             <div class="hero-actions">
-              <a class="primary-button" href="#contact" data-i18n="heroCta">Обсудить проект</a>
-              <a class="ghost-button" href="#services" data-i18n="heroSecondary">Смотреть услуги</a>
-            </div>
-
-            <div class="hero-stats" aria-label="Company stats">
-              <div>
-                <strong>100+</strong>
-                <span data-i18n="statOne">идей в разработке</span>
-              </div>
-              <div>
-                <strong>24/7</strong>
-                <span data-i18n="statTwo">цифровой режим</span>
-              </div>
-              <div>
-                <strong>RU/EN</strong>
-                <span data-i18n="statThree">две версии сайта</span>
-              </div>
+              <a class="primary-button" href="#contact" data-i18n="heroCta">Запустить проект</a>
+              <a class="ghost-button" href="#studio" data-i18n="heroSecondary">Посмотреть подход</a>
             </div>
           </div>
 
-          <div class="terminal-stack">
-            <div class="terminal-window" aria-label="W1ZZYDEV terminal concept">
-              <div class="terminal-top">
-                <span></span><span></span><span></span>
-                <p>w1zzydev_control.panel</p>
+          <div class="command-deck" aria-label="W1ZZYDEV production dashboard">
+            <div class="deck-header">
+              <span data-i18n="deckLabel">production board</span>
+              <strong>W1Z-01</strong>
+            </div>
+
+            <div class="deck-focus">
+              <span data-i18n="deckFocusLabel">текущий фокус</span>
+              <h2 data-i18n="deckFocusTitle">Главный сайт компании</h2>
+              <p data-i18n="deckFocusText">Брендовая сцена, адаптив, контакты и структура для будущих кейсов.</p>
+            </div>
+
+            <div class="deck-metrics">
+              <div>
+                <strong>01</strong>
+                <span data-i18n="metricOne">ручная сборка</span>
               </div>
-              <div class="terminal-body">
-                <p><span>&gt;</span> studio status --premium-build</p>
-                <p data-i18n="terminalOne">✓ Архитектура сайта собрана</p>
-                <p data-i18n="terminalTwo">✓ Визуальный стиль закреплен</p>
-                <p data-i18n="terminalThree">✓ Анимации и адаптив проверены</p>
-                <p data-i18n="terminalFour">✓ GitHub Pages готов к запуску</p>
-                <div class="quality-grid">
-                  <span data-i18n="qualityOne">Ручная верстка</span>
-                  <span data-i18n="qualityTwo">Быстрый интерфейс</span>
-                  <span data-i18n="qualityThree">Чистая структура</span>
-                </div>
-                <p><span>&gt;</span> production mode --on<span class="caret"></span></p>
+              <div>
+                <strong>02</strong>
+                <span data-i18n="metricTwo">адаптив RU/EN</span>
+              </div>
+              <div>
+                <strong>03</strong>
+                <span data-i18n="metricThree">готовность к росту</span>
               </div>
             </div>
 
-            <div class="approval-toast">
-              <span></span>
-              <p data-i18n="toastText">Проект усилен брендом W1ZZYDEV</p>
+            <div class="build-steps">
+              <div>
+                <span></span>
+                <p data-i18n="buildOne">Стиль закреплен</p>
+              </div>
+              <div>
+                <span></span>
+                <p data-i18n="buildTwo">Структура расширяется</p>
+              </div>
+              <div>
+                <span></span>
+                <p data-i18n="buildThree">Публикация активна</p>
+              </div>
             </div>
           </div>
         </div>
+      </section>
 
-        <div class="scroll-mark">SCROLL</div>
+      <section class="studio-strip" id="studio">
+        <div>
+          <p class="eyebrow" data-i18n="studioEyebrow">Не шаблон</p>
+          <h2 data-i18n="studioTitle">Сайт должен работать как штаб компании: показывать масштаб, принимать заявки и развиваться вместе с брендом.</h2>
+        </div>
+        <p data-i18n="studioText">Мы оставляем фирменный темный кодовый характер W1ZZYDEV, но строим собственную композицию: меньше копирования, больше системы, статуса и понятной коммерческой пользы.</p>
       </section>
 
       <section class="section-block" id="services">
         <div class="section-heading">
           <p class="eyebrow" data-i18n="servicesEyebrow">Направления</p>
-          <h2 data-i18n="servicesTitle">Не визитка. Экосистема, которую можно расширять годами.</h2>
+          <h2 data-i18n="servicesTitle">Основа большого сайта: дизайн, разработка, автоматизация и поддержка.</h2>
         </div>
+
         <div class="service-grid">
           <article class="service-card">
             <span>WEB</span>
-            <h3 data-i18n="serviceOneTitle">Сайты и платформы</h3>
-            <p data-i18n="serviceOneText">Премиальные главные страницы, корпоративные сайты, лендинги и будущие разделы под продукты.</p>
-          </article>
-          <article class="service-card">
-            <span>AUTO</span>
-            <h3 data-i18n="serviceTwoTitle">Автоматизация процессов</h3>
-            <p data-i18n="serviceTwoText">Инструменты, формы, заявки, CRM-логика и сценарии, которые экономят время и усиливают бизнес.</p>
+            <h3 data-i18n="serviceOneTitle">Сайты и лендинги</h3>
+            <p data-i18n="serviceOneText">Главные страницы, корпоративные сайты, промо-страницы, портфолио и будущие разделы под кейсы.</p>
           </article>
           <article class="service-card">
             <span>UX</span>
-            <h3 data-i18n="serviceThreeTitle">Интерфейсы продукта</h3>
-            <p data-i18n="serviceThreeText">Темные технологичные интерфейсы, панели управления, дизайн-системы и адаптивные экраны.</p>
+            <h3 data-i18n="serviceTwoTitle">Интерфейсы и панели</h3>
+            <p data-i18n="serviceTwoText">Личные кабинеты, панели управления, формы заявок, продуктовые экраны и удобная логика действий.</p>
+          </article>
+          <article class="service-card">
+            <span>AUTO</span>
+            <h3 data-i18n="serviceThreeTitle">Автоматизация</h3>
+            <p data-i18n="serviceThreeText">Заявки, уведомления, CRM-логика, таблицы, внутренние процессы и аккуратная связь между сервисами.</p>
+          </article>
+          <article class="service-card featured">
+            <span>SUP</span>
+            <h3 data-i18n="serviceFourTitle">Рост и сопровождение</h3>
+            <p data-i18n="serviceFourText">После запуска сайт можно дополнять кейсами, страницами услуг, аналитикой, SEO и доменом.</p>
           </article>
         </div>
       </section>
 
-      <section class="showcase" id="cases">
-        <div class="showcase-media">
-          <img src="assets/w1zzydev-logo.png" alt="W1ZZYDEV logo" />
+      <section class="systems" id="systems">
+        <div class="systems-copy">
+          <p class="eyebrow" data-i18n="systemsEyebrow">Система W1ZZYDEV</p>
+          <h2 data-i18n="systemsTitle">Каждый блок сайта должен быть полезным: объяснять, продавать, вести к контакту.</h2>
+          <p data-i18n="systemsText">Сейчас заложен фундамент. Дальше сюда добавятся настоящие работы, кейсы, страницы услуг, форма заявки, аналитика и домен.</p>
         </div>
-        <div class="showcase-copy">
-          <p class="eyebrow" data-i18n="casesEyebrow">Кейсы скоро</p>
-          <h2 data-i18n="casesTitle">Здесь будут работы, которые докажут масштаб W1ZZYDEV.</h2>
-          <p data-i18n="casesText">Раздел готов под сайты, сервисы, автоматизации и визуальные кейсы с результатами, скриншотами и ссылками.</p>
-          <div class="case-list">
-            <span data-i18n="caseOne">Сайты</span>
-            <span data-i18n="caseTwo">Сервисы</span>
-            <span data-i18n="caseThree">Автоматизация</span>
-            <span data-i18n="caseFour">Брендинг</span>
-          </div>
-        </div>
-      </section>
 
-      <section class="section-block" id="process">
-        <div class="section-heading compact">
-          <p class="eyebrow" data-i18n="processEyebrow">Процесс</p>
-          <h2 data-i18n="processTitle">Каждый новый блок должен усиливать ощущение большой компании.</h2>
-        </div>
-        <div class="timeline">
+        <div class="roadmap">
           <article>
-            <span>01</span>
-            <h3 data-i18n="stepOneTitle">Образ</h3>
-            <p data-i18n="stepOneText">Темная технологичная сцена, зеленый брендовый свет, код и ощущение будущего.</p>
+            <strong>01</strong>
+            <h3 data-i18n="roadOneTitle">Бренд</h3>
+            <p data-i18n="roadOneText">Фиксируем узнаваемую темную эстетику, логотип, баннер и собственные UI-мотивы.</p>
           </article>
           <article>
-            <span>02</span>
-            <h3 data-i18n="stepTwoTitle">Система</h3>
-            <p data-i18n="stepTwoText">Главная, услуги, кейсы, процесс, основатель, контакты и будущие отдельные страницы.</p>
+            <strong>02</strong>
+            <h3 data-i18n="roadTwoTitle">Контент</h3>
+            <p data-i18n="roadTwoText">Добавляем услуги, доказательства, реальные работы и сильные формулировки.</p>
           </article>
           <article>
-            <span>03</span>
-            <h3 data-i18n="stepThreeTitle">Рост</h3>
-            <p data-i18n="stepThreeText">Добавляем портфолио, SEO, аналитику, заявки, домен и новые продуктовые направления.</p>
+            <strong>03</strong>
+            <h3 data-i18n="roadThreeTitle">Продажи</h3>
+            <p data-i18n="roadThreeText">Подключаем контакты, заявки, мессенджеры и понятный путь для клиента.</p>
           </article>
         </div>
       </section>
 
-      <section class="founder" id="contact">
-        <div>
-          <p class="eyebrow" data-i18n="founderEyebrow">Основатель</p>
-          <h2 data-i18n="founderTitle">Починков Максим Сергеевич</h2>
-          <p data-i18n="founderText">W1ZZYDEV собирается как технологичная компания с амбицией вырасти в крупный бренд: сильный сайт, понятная подача и место для будущих продуктов.</p>
+      <section class="contact-section" id="contact">
+        <div class="contact-copy">
+          <p class="eyebrow" data-i18n="contactEyebrow">Контакты</p>
+          <h2 data-i18n="contactTitle">Починков Максим Сергеевич</h2>
+          <p data-i18n="contactText">Основатель W1ZZYDEV. Напишите удобным способом, чтобы обсудить сайт, интерфейс, автоматизацию или развитие проекта.</p>
         </div>
-        <a class="primary-button" href="mailto:hello@w1zzydev.com" data-i18n="contactCta">Связаться</a>
+
+        <div class="contact-grid">
+          <a class="contact-card primary-contact" href="mailto:w1zzydev.studio@gmail.com">
+            <span data-i18n="contactEmailLabel">Gmail</span>
+            <strong>w1zzydev.studio@gmail.com</strong>
+            <small data-i18n="contactEmailText">Для заявок и рабочих писем</small>
+          </a>
+          <a class="contact-card" href="https://www.instagram.com/w1zzydev?igsh=Nnd5ZWNtMmNqeGI1&utm_source=qr" target="_blank" rel="noreferrer">
+            <span data-i18n="contactInstagramLabel">Instagram</span>
+            <strong>@w1zzydev</strong>
+            <small data-i18n="contactInstagramText">Визуальные обновления студии</small>
+          </a>
+          <a class="contact-card" href="https://t.me/W1zzY228" target="_blank" rel="noreferrer">
+            <span data-i18n="contactTelegramLabel">Telegram</span>
+            <strong>@W1zzY228</strong>
+            <small data-i18n="contactTelegramText">Быстрая связь по проекту</small>
+          </a>
+          <a class="contact-card" href="https://wa.me/message/ICHYJGLJUYAWI1" target="_blank" rel="noreferrer">
+            <span data-i18n="contactWhatsappLabel">WhatsApp</span>
+            <strong data-i18n="contactWhatsappTitle">Открыть чат</strong>
+            <small data-i18n="contactWhatsappText">Удобно для первого сообщения</small>
+          </a>
+        </div>
       </section>
     </main>
   </div>
 
-  <script src="script.js?v=20260617-2"></script>
+  <script src="script.js?v=20260617-3"></script>
 </body>
 </html>
