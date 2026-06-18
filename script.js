@@ -240,11 +240,11 @@ function setTheme(theme) {
   document.body.dataset.theme = nextTheme;
   themeToggle.setAttribute("aria-pressed", String(nextTheme === "light"));
   themeToggle.setAttribute("aria-label", nextTheme === "light" ? "Включить темную тему" : "Включить светлую тему");
-  localStorage.setItem("w1zzydev-theme", nextTheme);
+  localStorage.setItem("w1zzydev-theme-v2", nextTheme);
 }
 
-const savedTheme = localStorage.getItem("w1zzydev-theme");
-setTheme(savedTheme || (window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark"));
+const savedTheme = localStorage.getItem("w1zzydev-theme-v2");
+setTheme(savedTheme || "dark");
 themeToggle.addEventListener("click", () => setTheme(document.body.dataset.theme === "light" ? "dark" : "light"));
 
 const canvas = document.getElementById("matrixCanvas");
