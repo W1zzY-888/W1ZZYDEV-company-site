@@ -5,6 +5,8 @@ const translations = {
     navPortfolio: "Портфолио",
     navSystems: "Система",
     navContact: "Контакты",
+    menuOpenLabel: "Открыть меню",
+    menuCloseLabel: "Закрыть меню",
     statusText: "Цифровая студия ручной разработки - 2026",
     heroTitle: "Проектируем сайты, интерфейсы и веб-системы под задачу клиента.",
     heroText: "W1ZZYDEV собирает визуальный образ, структуру и рабочие сценарии так, чтобы проект был понятным, удобным и готовым к росту.",
@@ -108,6 +110,8 @@ const translations = {
     navPortfolio: "Portfolio",
     navSystems: "System",
     navContact: "Contacts",
+    menuOpenLabel: "Open menu",
+    menuCloseLabel: "Close menu",
     statusText: "Hand-built digital production studio - 2026",
     heroTitle: "We design websites, interfaces and web systems around the client’s goal.",
     heroText: "W1ZZYDEV builds the visual image, structure and working scenarios so every project feels clear, convenient and ready to grow.",
@@ -210,6 +214,16 @@ const translations = {
 const buttons = document.querySelectorAll("[data-lang]");
 const nodes = document.querySelectorAll("[data-i18n]");
 const themeToggle = document.getElementById("themeToggle");
+const menuToggle = document.getElementById("menuToggle");
+const topbar = document.querySelector(".topbar");
+const navLinks = document.querySelector(".nav-links");
+
+function setMenu(open) {
+  const dictionary = translations[document.documentElement.lang] || translations.ru;
+  topbar.classList.toggle("menu-open", open);
+  menuToggle.setAttribute("aria-expanded", String(open));
+  menuToggle.setAttribute("aria-label", open ? dictionary.menuCloseLabel : dictionary.menuOpenLabel);
+}
 
 function setLanguage(lang) {
   const dictionary = translations[lang] || translations.ru;
@@ -225,6 +239,8 @@ function setLanguage(lang) {
   buttons.forEach((button) => {
     button.classList.toggle("active", button.dataset.lang === lang);
   });
+
+  setMenu(false);
 
   localStorage.setItem("w1zzydev-language", lang);
 }
@@ -246,6 +262,34 @@ function setTheme(theme) {
 const savedTheme = localStorage.getItem("w1zzydev-theme-v2");
 setTheme(savedTheme || "dark");
 themeToggle.addEventListener("click", () => setTheme(document.body.dataset.theme === "light" ? "dark" : "light"));
+
+menuToggle.addEventListener("click", (event) => {
+  event.stopPropagation();
+  setMenu(menuToggle.getAttribute("aria-expanded") !== "true");
+});
+
+navLinks.querySelectorAll("a").forEach((link) => {
+  link.addEventListener("click", () => setMenu(false));
+});
+
+document.addEventListener("click", (event) => {
+  if (!topbar.contains(event.target)) {
+    setMenu(false);
+  }
+});
+
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape") {
+    setMenu(false);
+    menuToggle.focus();
+  }
+});
+
+window.addEventListener("resize", () => {
+  if (window.innerWidth > 860) {
+    setMenu(false);
+  }
+});
 
 const canvas = document.getElementById("matrixCanvas");
 const ctx = canvas.getContext("2d");

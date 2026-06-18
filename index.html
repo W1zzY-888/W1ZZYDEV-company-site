@@ -6,7 +6,7 @@
   <title>W1ZZYDEV - digital production studio</title>
   <meta name="description" content="W1ZZYDEV is a digital production studio creating websites, interfaces, automation and scalable web systems by hand." />
   <link rel="icon" type="image/png" href="assets/favicon.png" />
-  <link rel="stylesheet" href="styles.css?v=20260618-4" />
+  <link rel="stylesheet" href="styles.css?v=20260619-2" />
 </head>
 <body>
   <canvas class="matrix-canvas" id="matrixCanvas" aria-hidden="true"></canvas>
@@ -20,7 +20,13 @@
         <span>W1ZZYDEV</span>
       </a>
 
-      <nav class="nav-links" aria-label="Site sections">
+      <button class="menu-toggle" id="menuToggle" type="button" aria-controls="mobileNav" aria-expanded="false" aria-label="Открыть меню">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+
+      <nav class="nav-links" id="mobileNav" aria-label="Site sections">
         <a href="#studio" data-i18n="navStudio">Студия</a>
         <a href="#services" data-i18n="navServices">Услуги</a>
         <a href="#portfolio" data-i18n="navPortfolio">Портфолио</a>
@@ -285,6 +291,6 @@
     </footer>
   </div>
 
-  <script src="script.js?v=20260618-4"></script>
+  <script src="script.js?v=20260619-2"></script>
 </body>
 </html>
