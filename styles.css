@@ -1247,12 +1247,12 @@ body[data-theme="light"] .cursor-core { background: #087c5a; }
   .nav-links {
     position: absolute;
     top: calc(100% + 8px);
-    left: 0;
+    left: auto;
     right: 0;
     z-index: 60;
     display: grid;
     gap: 6px;
-    width: 100%;
+    width: min(78vw, 310px);
     min-height: 0;
     margin: 0;
     padding: 10px;
