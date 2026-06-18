@@ -1251,11 +1251,11 @@ body[data-theme="light"] .cursor-core { background: #087c5a; }
     right: 0;
     z-index: 60;
     display: grid;
-    gap: 6px;
-    width: min(78vw, 310px);
+    gap: 5px;
+    width: min(68vw, 260px);
     min-height: 0;
     margin: 0;
-    padding: 10px;
+    padding: 8px;
     overflow: visible;
     border-color: rgba(103, 255, 196, 0.22);
     border-radius: 10px;
@@ -1280,15 +1280,15 @@ body[data-theme="light"] .cursor-core { background: #087c5a; }
 
   .nav-links a {
     display: grid;
-    grid-template-columns: 34px 1fr auto;
+    grid-template-columns: 27px 1fr auto;
     align-items: center;
-    min-height: 54px;
-    padding: 0 14px;
+    min-height: 46px;
+    padding: 0 11px;
     border: 1px solid rgba(255, 255, 255, 0.07);
     border-radius: 8px;
     color: var(--ink);
     background: rgba(255, 255, 255, 0.035);
-    font-size: 14px;
+    font-size: 13px;
     text-align: left;
     counter-increment: mobile-nav;
   }
@@ -1297,7 +1297,7 @@ body[data-theme="light"] .cursor-core { background: #087c5a; }
     color: var(--green);
     content: "0" counter(mobile-nav);
     font-family: "SFMono-Regular", Consolas, monospace;
-    font-size: 10px;
+    font-size: 9px;
   }
 
   .nav-links a::after {
