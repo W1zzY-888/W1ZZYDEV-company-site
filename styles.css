@@ -852,11 +852,13 @@ body[data-theme="light"] .project-cta {
 }
 
 body[data-theme="light"] .brand-banner {
-  width: min(100%, 640px);
-  margin-right: auto;
-  margin-left: auto;
   border-color: rgba(8, 124, 90, 0.26);
-  background: linear-gradient(145deg, rgba(223, 238, 229, 0.96), rgba(248, 251, 249, 0.98));
+  background:
+    linear-gradient(rgba(8, 124, 90, 0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(8, 124, 90, 0.045) 1px, transparent 1px),
+    radial-gradient(circle at center, rgba(8, 124, 90, 0.18), transparent 38%),
+    linear-gradient(90deg, rgba(248, 251, 249, 0.98), rgba(223, 238, 229, 0.92) 50%, rgba(248, 251, 249, 0.98));
+  background-size: 34px 34px, 34px 34px, auto, auto;
   box-shadow: 0 20px 60px rgba(42, 65, 53, 0.14), inset 0 0 34px rgba(8, 124, 90, 0.06);
 }
 
