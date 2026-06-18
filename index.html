@@ -6,7 +6,7 @@
   <title>W1ZZYDEV - digital production studio</title>
   <meta name="description" content="W1ZZYDEV is a digital production studio creating websites, interfaces, automation and scalable web systems by hand." />
   <link rel="icon" type="image/png" href="assets/favicon.png" />
-  <link rel="stylesheet" href="styles.css?v=20260617-8" />
+  <link rel="stylesheet" href="styles.css?v=20260618-1" />
 </head>
 <body>
   <canvas class="matrix-canvas" id="matrixCanvas" aria-hidden="true"></canvas>
@@ -28,7 +28,10 @@
         <a href="#contact" data-i18n="navContact">Контакты</a>
       </nav>
 
-      <div class="actions" aria-label="Language switcher">
+      <div class="actions" aria-label="Display settings">
+        <button class="theme-button" id="themeToggle" type="button" aria-label="Переключить тему" aria-pressed="false">
+          <span aria-hidden="true">◐</span>
+        </button>
         <button class="lang-button active" type="button" data-lang="ru">RU</button>
         <button class="lang-button" type="button" data-lang="en">EN</button>
       </div>
@@ -114,6 +117,21 @@
         <p data-i18n="studioText">Фирменный стиль этого сайта - только наша оболочка. Для клиентов мы подбираем разный визуальный язык: светлый, премиальный, яркий, строгий, минималистичный или полностью индивидуальный.</p>
       </section>
 
+      <section class="section-block audience-section">
+        <div class="section-heading">
+          <p class="eyebrow" data-i18n="audienceEyebrow">Для кого</p>
+          <h2 data-i18n="audienceTitle">Подбираем структуру и визуальный язык под задачу, а не под один шаблон.</h2>
+        </div>
+
+        <div class="audience-grid">
+          <article><span>01</span><h3 data-i18n="audienceOneTitle">Бизнес и услуги</h3><p data-i18n="audienceOneText">Корпоративные сайты и понятный путь от знакомства до заявки.</p></article>
+          <article><span>02</span><h3 data-i18n="audienceTwoTitle">Эксперты и команды</h3><p data-i18n="audienceTwoText">Портфолио, личные бренды и презентация компетенций без лишнего шума.</p></article>
+          <article><span>03</span><h3 data-i18n="audienceThreeTitle">Творческие проекты</h3><p data-i18n="audienceThreeText">Выразительная подача для beauty, design, media и нестандартных идей.</p></article>
+          <article><span>04</span><h3 data-i18n="audienceFourTitle">Цифровые продукты</h3><p data-i18n="audienceFourText">Интерфейсы, кабинеты и веб-системы с логичными сценариями.</p></article>
+        </div>
+
+      </section>
+
       <section class="section-block" id="services">
         <div class="section-heading">
           <p class="eyebrow" data-i18n="servicesEyebrow">Направления</p>
@@ -141,6 +159,23 @@
             <h3 data-i18n="serviceFourTitle">Рост и сопровождение</h3>
             <p data-i18n="serviceFourText">После запуска сайт можно дополнять кейсами, страницами услуг, аналитикой, SEO и доменом.</p>
           </article>
+        </div>
+      </section>
+
+      <section class="section-block trust-section">
+        <div class="section-heading">
+          <p class="eyebrow" data-i18n="trustEyebrow">Что получает клиент</p>
+          <h2 data-i18n="trustTitle">Полный рабочий сайт — от визуальной системы до публикации и поддержки.</h2>
+        </div>
+        <div class="trust-grid">
+          <span data-i18n="trustDesign">Индивидуальный дизайн</span>
+          <span data-i18n="trustResponsive">Адаптив для всех экранов</span>
+          <span data-i18n="trustLanguages">Интерфейс RU / EN</span>
+          <span data-i18n="trustPublish">Публикация проекта</span>
+          <span data-i18n="trustContacts">Рабочие контакты и заявки</span>
+          <span data-i18n="trustSupport">Поддержка после запуска</span>
+          <span data-i18n="trustDomain">Подключение домена</span>
+          <span data-i18n="trustSeo">Базовая SEO-подготовка</span>
         </div>
       </section>
 
@@ -181,6 +216,7 @@
             <span data-i18n="portfolioSisterType">Beauty website</span>
             <h3 data-i18n="portfolioSisterTitle">ANGEL'S MAKEUP</h3>
             <p data-i18n="portfolioSisterText">Полноценный рабочий сайт для beauty-направления с аккуратной подачей и готовой публикацией.</p>
+            <dl><div><dt data-i18n="portfolioTask">Задача</dt><dd data-i18n="portfolioSisterTask">Собрать цельный образ услуг и упростить запись.</dd></div><div><dt data-i18n="portfolioResult">Результат</dt><dd data-i18n="portfolioSisterResult">Адаптивный beauty-сайт с ясной структурой и рабочей публикацией.</dd></div></dl>
             <strong data-i18n="portfolioOpen">Открыть сайт</strong>
           </a>
 
@@ -188,6 +224,7 @@
             <span data-i18n="portfolioDashaType">Designer website</span>
             <h3 data-i18n="portfolioDashaTitle">Сайт-визитка дизайнера</h3>
             <p data-i18n="portfolioDashaText">Элегантное портфолио для графического дизайнера: работы, стиль, услуги и личная подача в одном цельном сайте.</p>
+            <dl><div><dt data-i18n="portfolioTask">Задача</dt><dd data-i18n="portfolioDashaTask">Показать работы и авторский стиль в одной истории.</dd></div><div><dt data-i18n="portfolioResult">Результат</dt><dd data-i18n="portfolioDashaResult">Лаконичное портфолио с быстрым доступом к проектам и услугам.</dd></div></dl>
             <strong data-i18n="portfolioOpen">Открыть сайт</strong>
           </a>
 
@@ -195,16 +232,22 @@
             <span data-i18n="portfolioFatherType">Video studio</span>
             <h3 data-i18n="portfolioFatherTitle">Камера Мотор</h3>
             <p data-i18n="portfolioFatherText">Сайт для видеостудии с 15-летним опытом: услуги, портфолио, атмосфера съемки и быстрый путь к заказу.</p>
+            <dl><div><dt data-i18n="portfolioTask">Задача</dt><dd data-i18n="portfolioFatherTask">Передать опыт студии и привести посетителя к заказу.</dd></div><div><dt data-i18n="portfolioResult">Результат</dt><dd data-i18n="portfolioFatherResult">Атмосферный сайт с услугами, работами и прямым сценарием обращения.</dd></div></dl>
             <strong data-i18n="portfolioOpen">Открыть сайт</strong>
           </a>
         </div>
       </section>
 
+      <section class="project-cta">
+        <div><p class="eyebrow" data-i18n="ctaEyebrow">Есть идея?</p><h2 data-i18n="ctaTitle">Коротко опишите проект — предложим направление по структуре и запуску.</h2></div>
+        <a class="primary-button" href="mailto:w1zzydev.studio@gmail.com?subject=W1ZZYDEV%20—%20новый%20проект" data-i18n="ctaButton">Описать идею</a>
+      </section>
+
       <section class="contact-section" id="contact">
         <div class="contact-copy">
           <p class="eyebrow" data-i18n="contactEyebrow">Контакты</p>
-          <h2 data-i18n="contactTitle">Починков Максим Сергеевич</h2>
-          <p data-i18n="contactText">Основатель W1ZZYDEV. Напишите удобным способом, чтобы обсудить сайт, интерфейс, автоматизацию или развитие проекта.</p>
+          <h2 data-i18n="contactTitle">Обсудим ваш проект</h2>
+          <p data-i18n="contactText">Напишите удобным способом, чтобы обсудить сайт, интерфейс, автоматизацию или развитие проекта.</p>
         </div>
 
         <div class="contact-grid">
@@ -242,6 +285,6 @@
     </footer>
   </div>
 
-  <script src="script.js?v=20260617-8"></script>
+  <script src="script.js?v=20260618-1"></script>
 </body>
 </html>

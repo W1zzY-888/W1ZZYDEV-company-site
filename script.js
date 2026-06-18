@@ -25,6 +25,16 @@ const translations = {
     studioEyebrow: "Не шаблон",
     studioTitle: "Сайт должен работать как штаб компании: показывать масштаб, принимать заявки и развиваться вместе с брендом.",
     studioText: "Фирменный стиль этого сайта - только наша оболочка. Для клиентов мы подбираем разный визуальный язык: светлый, премиальный, яркий, строгий, минималистичный или полностью индивидуальный.",
+    audienceEyebrow: "Для кого",
+    audienceTitle: "Подбираем структуру и визуальный язык под задачу, а не под один шаблон.",
+    audienceOneTitle: "Бизнес и услуги",
+    audienceOneText: "Корпоративные сайты и понятный путь от знакомства до заявки.",
+    audienceTwoTitle: "Эксперты и команды",
+    audienceTwoText: "Портфолио, личные бренды и презентация компетенций без лишнего шума.",
+    audienceThreeTitle: "Творческие проекты",
+    audienceThreeText: "Выразительная подача для beauty, design, media и нестандартных идей.",
+    audienceFourTitle: "Цифровые продукты",
+    audienceFourText: "Интерфейсы, кабинеты и веб-системы с логичными сценариями.",
     servicesEyebrow: "Направления",
     servicesTitle: "Основа большого сайта: дизайн, разработка, автоматизация и поддержка.",
     serviceOneTitle: "Сайты и лендинги",
@@ -35,6 +45,16 @@ const translations = {
     serviceThreeText: "Заявки, уведомления, CRM-логика, таблицы, внутренние процессы и аккуратная связь между сервисами.",
     serviceFourTitle: "Рост и сопровождение",
     serviceFourText: "После запуска сайт можно дополнять кейсами, страницами услуг, аналитикой, SEO и доменом.",
+    trustEyebrow: "Что получает клиент",
+    trustTitle: "Полный рабочий сайт — от визуальной системы до публикации и поддержки.",
+    trustDesign: "Индивидуальный дизайн",
+    trustResponsive: "Адаптив для всех экранов",
+    trustLanguages: "Интерфейс RU / EN",
+    trustPublish: "Публикация проекта",
+    trustContacts: "Рабочие контакты и заявки",
+    trustSupport: "Поддержка после запуска",
+    trustDomain: "Подключение домена",
+    trustSeo: "Базовая SEO-подготовка",
     systemsEyebrow: "Система W1ZZYDEV",
     systemsTitle: "Система сайта строится вокруг клиента: стиль, смысл, путь к заявке.",
     systemsText: "Мы можем собрать проект под любую нишу: beauty, услуги, производство, личный бренд, студию, магазин, портал или нестандартную идею.",
@@ -49,16 +69,27 @@ const translations = {
     portfolioSisterType: "Beauty website",
     portfolioSisterTitle: "ANGEL'S MAKEUP",
     portfolioSisterText: "Полноценный рабочий сайт для beauty-направления с аккуратной подачей и готовой публикацией.",
+    portfolioTask: "Задача",
+    portfolioResult: "Результат",
+    portfolioSisterTask: "Собрать цельный образ услуг и упростить запись.",
+    portfolioSisterResult: "Адаптивный beauty-сайт с ясной структурой и рабочей публикацией.",
     portfolioDashaType: "Designer website",
     portfolioDashaTitle: "Сайт-визитка дизайнера",
     portfolioDashaText: "Элегантное портфолио для графического дизайнера: работы, стиль, услуги и личная подача в одном цельном сайте.",
+    portfolioDashaTask: "Показать работы и авторский стиль в одной истории.",
+    portfolioDashaResult: "Лаконичное портфолио с быстрым доступом к проектам и услугам.",
     portfolioFatherType: "Video studio",
     portfolioFatherTitle: "Камера Мотор",
     portfolioFatherText: "Сайт для видеостудии с 15-летним опытом: услуги, портфолио, атмосфера съемки и быстрый путь к заказу.",
+    portfolioFatherTask: "Передать опыт студии и привести посетителя к заказу.",
+    portfolioFatherResult: "Атмосферный сайт с услугами, работами и прямым сценарием обращения.",
     portfolioOpen: "Открыть сайт",
+    ctaEyebrow: "Есть идея?",
+    ctaTitle: "Коротко опишите проект — предложим направление по структуре и запуску.",
+    ctaButton: "Описать идею",
     contactEyebrow: "Контакты",
-    contactTitle: "Починков Максим Сергеевич",
-    contactText: "Основатель W1ZZYDEV. Напишите удобным способом, чтобы обсудить сайт, интерфейс, автоматизацию или развитие проекта.",
+    contactTitle: "Обсудим ваш проект",
+    contactText: "Напишите удобным способом, чтобы обсудить сайт, интерфейс, автоматизацию или развитие проекта.",
     contactEmailLabel: "Gmail",
     contactEmailText: "Для заявок и рабочих писем",
     contactInstagramLabel: "Instagram",
@@ -97,6 +128,16 @@ const translations = {
     studioEyebrow: "Not a template",
     studioTitle: "The site should work like company headquarters: show scale, receive requests and grow with the brand.",
     studioText: "The style of this website is only our own shell. For clients we choose a different visual language: light, premium, bright, strict, minimal or fully custom.",
+    audienceEyebrow: "Who it is for",
+    audienceTitle: "We choose structure and visual language for the goal, not for a single template.",
+    audienceOneTitle: "Business and services",
+    audienceOneText: "Corporate websites with a clear path from introduction to inquiry.",
+    audienceTwoTitle: "Experts and teams",
+    audienceTwoText: "Portfolios, personal brands and focused presentation of expertise.",
+    audienceThreeTitle: "Creative projects",
+    audienceThreeText: "Expressive presentation for beauty, design, media and unusual ideas.",
+    audienceFourTitle: "Digital products",
+    audienceFourText: "Interfaces, accounts and web systems with logical user flows.",
     servicesEyebrow: "Directions",
     servicesTitle: "The base of a large site: design, development, automation and support.",
     serviceOneTitle: "Websites and landing pages",
@@ -107,6 +148,16 @@ const translations = {
     serviceThreeText: "Requests, notifications, CRM logic, spreadsheets, internal processes and clean service connections.",
     serviceFourTitle: "Growth and support",
     serviceFourText: "After launch, the site can grow with cases, service pages, analytics, SEO and a custom domain.",
+    trustEyebrow: "What the client receives",
+    trustTitle: "A complete working website — from visual system to publishing and support.",
+    trustDesign: "Custom design",
+    trustResponsive: "Responsive on every screen",
+    trustLanguages: "RU / EN interface",
+    trustPublish: "Project publishing",
+    trustContacts: "Working contacts and inquiries",
+    trustSupport: "Post-launch support",
+    trustDomain: "Custom domain setup",
+    trustSeo: "Essential SEO setup",
     systemsEyebrow: "W1ZZYDEV system",
     systemsTitle: "A website system is built around the client: style, meaning and the path to a request.",
     systemsText: "We can build for any niche: beauty, services, production, personal brands, studios, stores, portals or unusual ideas.",
@@ -121,16 +172,27 @@ const translations = {
     portfolioSisterType: "Beauty website",
     portfolioSisterTitle: "ANGEL'S MAKEUP",
     portfolioSisterText: "A complete live website for a beauty project with polished presentation and production publishing.",
+    portfolioTask: "Task",
+    portfolioResult: "Result",
+    portfolioSisterTask: "Create a cohesive service image and simplify booking.",
+    portfolioSisterResult: "A responsive beauty website with clear structure and live publishing.",
     portfolioDashaType: "Designer website",
     portfolioDashaTitle: "Designer business-card site",
     portfolioDashaText: "An elegant portfolio for a graphic designer: work, style, services and personal presentation in one polished website.",
+    portfolioDashaTask: "Present the work and personal style as one story.",
+    portfolioDashaResult: "A concise portfolio with fast access to projects and services.",
     portfolioFatherType: "Video studio",
     portfolioFatherTitle: "Kamera Motor",
     portfolioFatherText: "A website for a video studio with 15 years of experience: services, portfolio, filming atmosphere and a fast path to booking.",
+    portfolioFatherTask: "Communicate the studio’s experience and lead visitors to booking.",
+    portfolioFatherResult: "An atmospheric site with services, work and a direct contact path.",
     portfolioOpen: "Open website",
+    ctaEyebrow: "Have an idea?",
+    ctaTitle: "Describe the project briefly — we will suggest a direction for its structure and launch.",
+    ctaButton: "Describe the idea",
     contactEyebrow: "Contacts",
-    contactTitle: "Maksim Sergeevich Pochinkov",
-    contactText: "Founder of W1ZZYDEV. Message through the channel that is convenient for discussing a website, interface, automation or project growth.",
+    contactTitle: "Let’s discuss your project",
+    contactText: "Message through the channel that is convenient for discussing a website, interface, automation or project growth.",
     contactEmailLabel: "Gmail",
     contactEmailText: "For requests and work emails",
     contactInstagramLabel: "Instagram",
@@ -147,6 +209,7 @@ const translations = {
 
 const buttons = document.querySelectorAll("[data-lang]");
 const nodes = document.querySelectorAll("[data-i18n]");
+const themeToggle = document.getElementById("themeToggle");
 
 function setLanguage(lang) {
   const dictionary = translations[lang] || translations.ru;
@@ -171,6 +234,18 @@ buttons.forEach((button) => {
 });
 
 setLanguage(localStorage.getItem("w1zzydev-language") || "ru");
+
+function setTheme(theme) {
+  const nextTheme = theme === "light" ? "light" : "dark";
+  document.body.dataset.theme = nextTheme;
+  themeToggle.setAttribute("aria-pressed", String(nextTheme === "light"));
+  themeToggle.setAttribute("aria-label", nextTheme === "light" ? "Включить темную тему" : "Включить светлую тему");
+  localStorage.setItem("w1zzydev-theme", nextTheme);
+}
+
+const savedTheme = localStorage.getItem("w1zzydev-theme");
+setTheme(savedTheme || (window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark"));
+themeToggle.addEventListener("click", () => setTheme(document.body.dataset.theme === "light" ? "dark" : "light"));
 
 const canvas = document.getElementById("matrixCanvas");
 const ctx = canvas.getContext("2d");
