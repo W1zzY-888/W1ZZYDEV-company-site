@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+
+Host: w1zzydev.com
+Sitemap: https://w1zzydev.com/sitemap.xml

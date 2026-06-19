@@ -1,5 +1,7 @@
 const translations = {
   ru: {
+    metaTitle: "Создание сайтов под ключ — W1ZZYDEV",
+    metaDescription: "W1ZZYDEV создаёт сайты под ключ: дизайн, адаптивная разработка, интерфейсы, автоматизация, публикация и поддержка проектов.",
     navStudio: "Студия",
     navServices: "Услуги",
     navPortfolio: "Портфолио",
@@ -106,6 +108,8 @@ const translations = {
     footerRights: "© 2026 W1ZZYDEV. Все права защищены."
   },
   en: {
+    metaTitle: "Custom Website Design & Development — W1ZZYDEV",
+    metaDescription: "W1ZZYDEV creates custom websites, interfaces and automation with responsive development, publishing and support.",
     navStudio: "Studio",
     navServices: "Services",
     navPortfolio: "Portfolio",
@@ -230,6 +234,8 @@ function setMenu(open) {
 function setLanguage(lang) {
   const dictionary = translations[lang] || translations.ru;
   document.documentElement.lang = lang;
+  document.title = dictionary.metaTitle;
+  document.querySelector('meta[name="description"]').setAttribute("content", dictionary.metaDescription);
 
   nodes.forEach((node) => {
     const key = node.dataset.i18n;

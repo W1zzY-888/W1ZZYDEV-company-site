@@ -1,0 +1,17 @@
+{
+  "name": "W1ZZYDEV — Website Design & Development",
+  "short_name": "W1ZZYDEV",
+  "description": "Custom websites, interfaces and automation.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#070908",
+  "theme_color": "#070908",
+  "icons": [
+    {
+      "src": "assets/favicon.png",
+      "sizes": "any",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
