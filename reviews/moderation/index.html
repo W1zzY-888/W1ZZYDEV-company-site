@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="ru"><head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Модерация отзывов — W1ZZYDEV</title>
+  <meta name="description" content="Закрытая панель модерации отзывов W1ZZYDEV."><meta name="robots" content="noindex,nofollow,noarchive">
+  <link rel="icon" href="/assets/favicon-48.png"><link rel="stylesheet" href="/styles.css">
+</head>
+<body data-title-ru="Модерация отзывов — W1ZZYDEV" data-title-en="Review moderation — W1ZZYDEV" data-description-ru="Закрытая панель модерации отзывов W1ZZYDEV." data-description-en="Private W1ZZYDEV review moderation panel.">
+<div class="site">
+  <header class="header"><div class="container header-inner">
+    <a class="brand" href="/"><img class="brand-icon" src="/assets/favicon-48.png" alt=""><span class="brand-mark">&lt;W1D&gt;</span>W1ZZYDEV</a>
+    <nav class="desktop-nav"><a class="nav-link" href="/reviews/" data-ru="Отзывы" data-en="Reviews"></a><a class="nav-link" href="/" data-ru="На сайт" data-en="Back to website"></a></nav>
+    <div class="header-tools"><button class="lang">EN</button><button class="menu-toggle" aria-label="Открыть меню"><i></i></button></div>
+  </div></header>
+  <main>
+    <section class="page-hero moderation-hero"><div class="container"><div class="breadcrumbs"><a href="/">W1ZZYDEV</a> / MODERATION</div><p class="eyebrow" data-ru="Закрытая панель" data-en="Private panel"></p><h1 data-ru="Модерация отзывов" data-en="Review moderation"></h1><p class="lead" data-ru="Проверяйте новые отзывы перед публикацией на сайте." data-en="Review submissions before publishing them on the website."></p></div></section>
+    <section class="section moderation-section"><div class="container">
+      <form class="form moderation-login" id="moderation-login">
+        <p class="eyebrow" data-ru="Вход модератора" data-en="Moderator sign in"></p>
+        <h2 data-ru="Доступ через Supabase" data-en="Supabase access"></h2>
+        <div class="field"><label data-ru="Email" data-en="Email"></label><input type="email" name="email" autocomplete="username" required></div>
+        <div class="field"><label data-ru="Пароль" data-en="Password"></label><input type="password" name="password" autocomplete="current-password" minlength="6" required></div>
+        <button class="button primary" type="submit" data-ru="Войти" data-en="Sign in"></button>
+      </form>
+      <p class="form-status visible moderation-message" id="moderation-message" role="status" aria-live="polite"></p>
+      <div class="moderation-panel hidden" id="moderation-panel">
+        <div class="moderation-toolbar"><div><p class="eyebrow" data-ru="Очередь отзывов" data-en="Review queue"></p><h2 data-ru="Управление публикациями" data-en="Manage publications"></h2></div><button class="button" id="moderation-logout" type="button" data-ru="Выйти" data-en="Sign out"></button></div>
+        <div class="moderation-stats"><div><strong data-moderation-count="pending">0</strong><span data-ru="На модерации" data-en="Pending"></span></div><div><strong data-moderation-count="published">0</strong><span data-ru="Опубликовано" data-en="Published"></span></div><div><strong data-moderation-count="rejected">0</strong><span data-ru="Отклонено" data-en="Rejected"></span></div></div>
+        <div class="moderation-list" id="moderation-list"></div>
+      </div>
+    </div></section>
+  </main>
+  <footer class="footer"><div class="container"><div class="footer-bottom"><span>© 2026 W1ZZYDEV</span><span>PRIVATE MODERATION PANEL</span></div></div></footer>
+</div><script src="/app.js"></script></body></html>
