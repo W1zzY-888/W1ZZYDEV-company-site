@@ -65,3 +65,14 @@ body{animation:none}.site{animation:pageIn .48s ease both}@keyframes pageIn{from
   .mobile-panel{position:absolute!important;top:83px!important;bottom:auto!important;min-height:calc(100svh - 83px);max-height:none;overflow-y:visible}
 }
 @media(max-width:620px){.mobile-panel{top:71px!important;min-height:calc(100svh - 71px);max-height:none}}
+
+/* Never let off-canvas navigation create horizontal page scrolling. */
+@media(max-width:900px){
+  html,body{width:100%;max-width:100%;overflow-x:hidden!important;overscroll-behavior-x:none}
+  body,.site{touch-action:pan-y pinch-zoom}
+  .site{width:100%;max-width:100%;overflow-x:hidden!important}
+  .mobile-panel{max-width:84vw;transform:none!important;clip-path:inset(0 0 0 100%);opacity:0;visibility:hidden;pointer-events:none;transition:clip-path .28s ease,opacity .22s ease,visibility .28s ease}
+  .mobile-panel.open{clip-path:inset(0);opacity:1;visibility:visible;pointer-events:auto}
+  .header-inner,.header-tools,.actions,.brand{min-width:0}
+  img,video,svg,canvas{max-width:100%}
+}
