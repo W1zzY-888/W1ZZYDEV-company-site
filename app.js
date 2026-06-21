@@ -170,15 +170,41 @@ setMeta('meta[name="twitter:image"]','name','twitter:image','https://w1zzydev.co
 const menu = $('.menu-toggle');
 const panel = $('.mobile-panel');
 if (menu && panel) {
-  menu.addEventListener('click', () => {
-    const open = panel.classList.toggle('open');
+  const backdrop = document.createElement('button');
+  backdrop.className = 'mobile-menu-backdrop';
+  backdrop.type = 'button';
+  backdrop.setAttribute('aria-label', 'Закрыть меню');
+  document.body.append(backdrop, panel);
+
+  const closeMenu = () => {
+    panel.classList.remove('open');
+    backdrop.classList.remove('open');
+    menu.classList.remove('open');
+    menu.setAttribute('aria-expanded', 'false');
+  };
+
+  menu.addEventListener('click', event => {
+    event.stopPropagation();
+    const open = !panel.classList.contains('open');
+    panel.classList.toggle('open', open);
+    backdrop.classList.toggle('open', open);
+    menu.classList.toggle('open', open);
     menu.setAttribute('aria-expanded', String(open));
+  });
+  backdrop.addEventListener('click', closeMenu);
+  panel.addEventListener('click', event => {
+    if (event.target === panel) closeMenu();
+  });
+  document.addEventListener('keydown', event => {
+    if (event.key === 'Escape') closeMenu();
+  });
+  window.addEventListener('resize', () => {
+    if (window.innerWidth > 900) closeMenu();
   });
   $$('a', panel).forEach(link => link.addEventListener('click', event => {
     event.preventDefault();
     const destination = link.getAttribute('href');
-    panel.classList.remove('open');
-    menu.setAttribute('aria-expanded', 'false');
+    closeMenu();
     if (destination) location.assign(destination);
   }));
 }
@@ -210,7 +236,14 @@ const budgetValues = [
 function setLang(next) {
   lang = next;
   document.documentElement.lang = lang;
-  $$('[data-ru][data-en]').forEach(element => { element.textContent = element.dataset[lang]; });
+  const copyOverrides = {
+    ru: { 'Маленькая студия с персональной ответственностью.': 'Веб-студия с полной ответственностью за результат.' },
+    en: { 'A focused studio with personal responsibility.': 'A web studio fully accountable for the result.' }
+  };
+  $$('[data-ru][data-en]').forEach(element => {
+    const source = element.dataset[lang] || '';
+    element.textContent = (copyOverrides[lang]?.[source] || source).replace(/\\n/g, ' ');
+  });
   $$('[data-placeholder-ru]').forEach(element => { element.placeholder = element.dataset[`placeholder${lang === 'ru' ? 'Ru' : 'En'}`]; });
   langButtons.forEach(button => button.classList.toggle('active', button.dataset.language === lang));
   $$('[data-price-rub]').forEach(price => {
