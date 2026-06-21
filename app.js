@@ -233,6 +233,21 @@ const budgetValues = [
   { ru: '100 000–250 000 ₽', en: '$1,400–$3,500' },
   { ru: 'От 250 000 ₽', en: 'From $3,500' }
 ];
+const projectTitleTranslations = {
+  DESIGNERPORTFOLIO: { ru: 'ПОРТФОЛИО ДИЗАЙНЕРА', en: 'DESIGNER PORTFOLIO' }
+};
+$$('.project-card h3, .case-hero h1').forEach(title => {
+  const key = title.textContent.replace(/\s+/g, '').toUpperCase();
+  const translation = projectTitleTranslations[key];
+  if (!translation) return;
+  title.dataset.ru = translation.ru;
+  title.dataset.en = translation.en;
+});
+$$('.project-card .button').forEach(button => {
+  if (button.textContent.trim().toLowerCase() !== 'view case') return;
+  button.dataset.ru = 'Смотреть кейс';
+  button.dataset.en = 'View case';
+});
 function setLang(next) {
   lang = next;
   document.documentElement.lang = lang;
