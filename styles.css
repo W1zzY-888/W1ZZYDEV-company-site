@@ -57,3 +57,11 @@ body{animation:none}.site{animation:pageIn .48s ease both}@keyframes pageIn{from
   .mobile-panel{position:fixed!important;top:83px!important;right:0!important;bottom:0!important;left:auto!important;z-index:49!important;height:auto!important;max-height:calc(100dvh - 83px);overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;box-shadow:-24px 0 70px rgba(0,0,0,.42)}
 }
 @media(max-width:620px){.mobile-panel{top:71px!important;max-height:calc(100dvh - 71px)}}
+
+/* On phones the header and its menu are one part of the page, not a detached bar. */
+@media(max-width:900px){
+  .header{position:relative;top:auto}
+  .mobile-menu-backdrop{position:absolute;top:0;right:0;bottom:auto;left:0;height:100svh}
+  .mobile-panel{position:absolute!important;top:83px!important;bottom:auto!important;min-height:calc(100svh - 83px);max-height:none;overflow-y:visible}
+}
+@media(max-width:620px){.mobile-panel{top:71px!important;min-height:calc(100svh - 71px);max-height:none}}
