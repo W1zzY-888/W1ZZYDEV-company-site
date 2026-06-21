@@ -1,5 +1,11 @@
 const $ = (selector, context = document) => context.querySelector(selector);
 const $$ = (selector, context = document) => [...context.querySelectorAll(selector)];
+const resetHorizontalScroll = () => {
+  if (window.scrollX !== 0) window.scrollTo(0, window.scrollY);
+};
+window.addEventListener('scroll', resetHorizontalScroll, { passive: true });
+window.addEventListener('resize', resetHorizontalScroll);
+window.addEventListener('orientationchange', () => window.setTimeout(resetHorizontalScroll, 120));
 const path = location.pathname.replace(/\/index\.html$/, '/');
 const navKey = path.includes('/services') ? 'services' : path.includes('/projects') ? 'projects' : path.includes('/pricing') ? 'pricing' : path.includes('/about') ? 'about' : path.includes('/reviews') ? 'reviews' : path.includes('/contact') ? 'contact' : 'home';
 $$('.desktop-nav,.mobile-panel').forEach(nav => {
