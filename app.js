@@ -313,12 +313,14 @@ form?.addEventListener('submit', event => {
     location.assign(`https://t.me/W1zzY228?text=${encoded}`);
   } else if (channel === 'whatsapp') {
     location.assign(`https://wa.me/message/ICHYJGLJUYAWI1?text=${encoded}`);
+  } else if (channel === 'instagram') {
+    location.assign('https://www.instagram.com/w1zzydev?igsh=Nnd5ZWNtMmNqeGI1&utm_source=qr');
   } else {
     location.href = `mailto:w1zzydev.studio@gmail.com?subject=${encodeURIComponent(`W1ZZYDEV — ${data.get('type')}`)}&body=${encoded}`;
   }
   if (status) {
     status.textContent = channel === 'email'
-      ? (lang === 'ru' ? 'Письмо подготовлено. Если почта не открылась, выберите Telegram или WhatsApp.' : 'Email prepared. If it did not open, choose Telegram or WhatsApp.')
+      ? (lang === 'ru' ? 'Письмо подготовлено. Если почта не открылась, выберите Telegram, WhatsApp или Instagram.' : 'Email prepared. If it did not open, choose Telegram, WhatsApp or Instagram.')
       : (lang === 'ru' ? 'Заявка подготовлена и скопирована. Вставьте её в открывшийся чат и отправьте.' : 'Request prepared and copied. Paste it into the opened chat and send.');
     status.classList.add('visible');
   }
@@ -355,6 +357,22 @@ function normalizeSupabaseReview(review) {
     moderatedAt: review.moderated_at || null
   };
 }
+
+const featuredReviewFallbacks = [
+  {
+    id: 'featured-daria-gorodnichaya',
+    name: 'Дарья Городничая',
+    company: 'Дизайнер',
+    companyEn: 'Designer',
+    rating: 5,
+    text: 'Очень понравилось работать с Максимом, все объяснил до мелочей, рассказал все тонкости и показал как будет продвигаться работа. Сроки сумасшедшие - 7 дней и сайт готов, я в восторге.',
+    textEn: 'I really enjoyed working with Maxim. He explained every detail, covered the important nuances and showed how the work would move forward. The timeline was incredible - 7 days and the site was ready. I am delighted.',
+    status: 'published',
+    published: true,
+    createdAt: '2026-06-21T00:00:00.000Z',
+    moderatedAt: '2026-06-21T00:00:00.000Z'
+  }
+];
 
 async function supabaseRequest(pathname, options = {}, accessToken = '') {
   const config = await getSupabaseConfig();
@@ -553,7 +571,11 @@ function createReviewCard(review) {
   identity.appendChild(name);
   if (review.company) {
     const company = document.createElement('small');
-    company.textContent = review.company;
+    if (review.companyEn) {
+      company.dataset.ru = review.company;
+      company.dataset.en = review.companyEn;
+    }
+    company.textContent = lang === 'en' && review.companyEn ? review.companyEn : review.company;
     identity.appendChild(company);
   }
   const stars = document.createElement('span');
@@ -562,7 +584,11 @@ function createReviewCard(review) {
   stars.textContent = '★'.repeat(review.rating) + '☆'.repeat(5 - review.rating);
   top.append(avatar, identity, stars);
   const text = document.createElement('p');
-  text.textContent = review.text;
+  if (review.textEn) {
+    text.dataset.ru = review.text;
+    text.dataset.en = review.textEn;
+  }
+  text.textContent = lang === 'en' && review.textEn ? review.textEn : review.text;
   const date = document.createElement('time');
   date.dateTime = review.createdAt;
   date.textContent = new Intl.DateTimeFormat(lang === 'ru' ? 'ru-RU' : 'en-US', { day: 'numeric', month: 'long', year: 'numeric' }).format(new Date(review.createdAt));
@@ -570,10 +596,11 @@ function createReviewCard(review) {
   return card;
 }
 
-async function renderReviews(container, limit = Infinity) {
+async function renderReviews(container, limit = Infinity, fallbackReviews = []) {
   if (!container) return;
   try {
-    const reviews = (await getReviews()).slice(0, limit);
+    const publishedReviews = await getReviews();
+    const reviews = (publishedReviews.length ? publishedReviews : fallbackReviews).slice(0, limit);
     container.replaceChildren();
     if (!reviews.length) {
       const empty = document.createElement('div');
@@ -586,6 +613,10 @@ async function renderReviews(container, limit = Infinity) {
     }
     reviews.forEach(review => container.appendChild(createReviewCard(review)));
   } catch (error) {
+    if (fallbackReviews.length) {
+      container.replaceChildren(...fallbackReviews.slice(0, limit).map(createReviewCard));
+      return;
+    }
     const failed = document.createElement('div');
     failed.className = 'reviews-empty';
     failed.textContent = lang === 'ru' ? 'Система отзывов пока не подключена.' : 'The review system is not connected yet.';
@@ -596,7 +627,7 @@ async function renderReviews(container, limit = Infinity) {
 const reviewsList = $('#reviews-list');
 const homeReviews = $('#home-reviews');
 renderReviews(reviewsList);
-renderReviews(homeReviews, 6);
+renderReviews(homeReviews, 6, featuredReviewFallbacks);
 
 const reviewForm = $('#review-form');
 reviewForm?.addEventListener('submit', async event => {

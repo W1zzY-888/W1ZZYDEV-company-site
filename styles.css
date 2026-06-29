@@ -28,6 +28,8 @@ body[data-theme="light"]::before{opacity:.15;filter:invert(1)}body[data-theme="l
 @media(max-width:720px){.actions{order:2}.menu-toggle{order:3}.theme-button{width:38px}.lang-button{width:43px}.header-tools{gap:6px}}
 @media(max-width:620px){.header-inner{gap:8px}.brand{font-size:13px;letter-spacing:.1em}.brand-mark{font-size:15px}.header-tools{gap:4px}.theme-button{width:34px}.lang-button{width:38px}}
 .brand-icon{width:34px;height:34px;flex:0 0 34px;border-radius:50%;object-fit:cover;filter:drop-shadow(0 0 14px rgba(99,230,186,.26))}
+.footer .brand{display:inline-flex;align-items:center;gap:10px;margin:0 0 8px;color:var(--text);font-size:18px;line-height:1}
+.footer .brand-icon{display:block;width:34px;height:34px;flex:0 0 34px}
 .brand-banner{position:relative;display:grid;place-items:center;min-height:150px;margin-top:38px;overflow:hidden;border:1px solid var(--line-strong);border-radius:22px;background:linear-gradient(rgba(99,230,186,.045) 1px,transparent 1px),linear-gradient(90deg,rgba(99,230,186,.045) 1px,transparent 1px),radial-gradient(circle at center,rgba(99,230,186,.2),transparent 38%),linear-gradient(90deg,rgba(8,14,12,.98),rgba(10,30,24,.92) 50%,rgba(8,14,12,.98));background-size:34px 34px,34px 34px,auto,auto;box-shadow:0 20px 60px rgba(0,0,0,.34),inset 0 0 34px rgba(99,230,186,.06)}
 .brand-banner::before{content:"";position:absolute;width:220px;height:220px;border:34px solid rgba(99,230,186,.08);transform:rotate(38deg);right:14%}
 .brand-banner img{position:relative;z-index:1;width:min(510px,72%);max-height:112px;object-fit:contain;filter:drop-shadow(0 12px 22px rgba(0,0,0,.28))}
@@ -75,4 +77,66 @@ body{animation:none}.site{animation:pageIn .48s ease both}@keyframes pageIn{from
   .mobile-panel.open{clip-path:inset(0);opacity:1;visibility:visible;pointer-events:auto}
   .header-inner,.header-tools,.actions,.brand{min-width:0}
   img,video,svg,canvas{max-width:100%}
+}
+
+/* Tighter rhythm: keep the premium scale, but remove empty dead zones between blocks. */
+.hero{padding:86px 0 70px}
+.brand-banner{margin-top:28px}
+.hero-actions,.card-actions{margin-top:26px}
+.hero-proof{margin-top:54px}
+.section{padding:72px 0}
+.section-head{align-items:center;gap:34px;margin-bottom:30px}
+.page-hero{padding:70px 0 44px}
+.reason-card{min-height:190px}
+.reason-card h3{margin-top:32px}
+.trust-cards .reason-card{min-height:205px}
+.trust-cards .reason-card h3{margin-top:28px}
+.process-card{min-height:220px}
+.process-card h3{margin-top:34px}
+.stats .stat{padding:28px}
+.cta{padding:44px}
+.case-hero{padding:64px 0 24px}
+.case-details{gap:44px}
+.case-details article{padding-bottom:28px;margin-bottom:28px}
+.footer{margin-top:64px;padding:36px 0}
+.footer-bottom{margin-top:24px;padding-top:18px}
+.section-head>p:last-child{
+  max-width:680px;
+  padding:20px 24px;
+  border-left:1px solid var(--line-strong);
+  border-radius:0 18px 18px 0;
+  background:linear-gradient(90deg,rgba(99,230,186,.075),rgba(99,230,186,.018));
+  color:#c6d4cf;
+  font-size:clamp(16px,1.35vw,20px);
+  line-height:1.55;
+}
+body[data-theme="light"] .section-head>p:last-child{
+  color:#46544d;
+  background:linear-gradient(90deg,rgba(8,124,90,.095),rgba(255,255,255,.42));
+}
+.channel-grid{grid-template-columns:repeat(2,1fr)}
+
+@media(max-width:900px){
+  .section{padding:62px 0}
+  .section-head{gap:16px;margin-bottom:26px}
+  .page-hero{padding:60px 0 38px}
+  .section-head>p:last-child{padding:16px 18px}
+}
+
+@media(max-width:620px){
+  .hero{padding:66px 0 52px}
+  .brand-banner{margin-top:16px}
+  .hero-proof{margin-top:38px}
+  .section{padding:52px 0}
+  .section-head{margin-bottom:22px}
+  .page-hero{padding:48px 0 30px}
+  .card{padding:20px}
+  .cta{padding:26px}
+  .footer{margin-top:48px;padding:30px 0}
+  .section-head>p:last-child{
+    border-left:0;
+    border-top:1px solid var(--line-strong);
+    border-radius:0 0 16px 16px;
+    font-size:15px;
+  }
 }
