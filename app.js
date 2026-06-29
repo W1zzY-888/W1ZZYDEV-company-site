@@ -25,6 +25,17 @@ $$('footer a[href="https://github.com/W1zzY-888"]').forEach(link => {
   link.href = 'https://wa.me/message/ICHYJGLJUYAWI1';
   link.textContent = 'WhatsApp';
 });
+$$('.footer-grid > div').forEach(column => {
+  const heading = $('strong', column);
+  const isContactColumn = heading?.dataset.ru === 'Связь' || heading?.dataset.en === 'Contact';
+  if (!isContactColumn || $('a[href*="instagram.com/w1zzydev"]', column)) return;
+  const instagram = document.createElement('a');
+  instagram.href = 'https://www.instagram.com/w1zzydev?igsh=Nnd5ZWNtMmNqeGI1&utm_source=qr';
+  instagram.target = '_blank';
+  instagram.rel = 'noreferrer';
+  instagram.textContent = 'Instagram';
+  column.appendChild(instagram);
+});
 $$('.brand').forEach(brand => {
   const mark = $('.brand-mark', brand);
   if (mark) {
