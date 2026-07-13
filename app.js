@@ -315,6 +315,19 @@ function isRateLimited(key) {
   sessionStorage.setItem(key, String(now));
   return false;
 }
+function base64Url(bytes) {
+  const binary = Array.from(bytes, byte => String.fromCharCode(byte)).join('');
+  return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+function createGuestToken() {
+  const bytes = new Uint8Array(32);
+  crypto.getRandomValues(bytes);
+  return base64Url(bytes);
+}
+async function hashGuestToken(token) {
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(token));
+  return base64Url(new Uint8Array(digest));
+}
 const discussionText = 'Здравствуйте! Я оставил заявку на сайте W1ZZYDEV и хочу продолжить обсуждение проекта.';
 const supportText = 'Здравствуйте! Я создал обращение в поддержку W1ZZYDEV и хочу продолжить обсуждение.';
 const channelLabels = {
@@ -419,9 +432,7 @@ form?.addEventListener('submit', async event => {
   const status = $('#form-status');
   const button = $('button[type="submit"]', form);
   const nextActions = $('#lead-next-actions');
-  const magicPanel = $('#lead-magic-panel');
   nextActions?.classList.add('hidden');
-  magicPanel?.classList.add('hidden');
   if (hasSpamSignal(form)) {
     setFormStatus(status, lang === 'ru' ? 'Заявка принята. Если нужно, отправьте сообщение удобным способом связи.' : 'Request accepted. If needed, send the message via your preferred channel.');
     form.reset();
@@ -447,14 +458,11 @@ form?.addEventListener('submit', async event => {
     lastLeadSubmissionKey = createdLead.submissionKey || submissionKey;
     navigator.clipboard?.writeText(discussionText).catch(() => {});
     updateChannelActionLinks(nextActions, discussionText, `W1ZZYDEV — ${type}`);
-    const email = isEmail(contact) ? contact : '';
-    const magicEmail = $('#lead-magic-email');
-    if (magicEmail) magicEmail.value = email;
     form.reset();
     updateContactDetailUI(form);
     nextActions?.classList.remove('hidden');
-    setFormStatus(status, lang === 'ru' ? 'Заявка принята. Как вам удобнее продолжить общение?' : 'Request accepted. How would you like to continue?');
-    if (channel === 'site_chat') magicPanel?.classList.remove('hidden');
+    setFormStatus(status, lang === 'ru' ? 'Заявка принята. Продолжим обсуждение здесь.' : 'Request accepted. We can continue here.');
+    await attachLeadToUniversalChat({ submissionKey: lastLeadSubmissionKey, name, contact, type, task, channel });
   } catch (error) {
     setFormStatus(status, (lang === 'ru' ? 'Не удалось сохранить заявку в Supabase: ' : 'Could not save the request in Supabase: ') + String(error.message || error), 'error');
   } finally {
@@ -465,35 +473,7 @@ form?.addEventListener('submit', async event => {
 $('#lead-next-actions')?.addEventListener('click', event => {
   const siteButton = event.target.closest('[data-lead-action="site_chat"]');
   if (!siteButton) return;
-  $('#lead-magic-panel')?.classList.remove('hidden');
-  $('#lead-magic-email')?.focus();
-});
-
-$('#lead-send-magic')?.addEventListener('click', async () => {
-  const emailInput = $('#lead-magic-email');
-  const status = $('#form-status');
-  const button = $('#lead-send-magic');
-  const email = cleanFormValue(emailInput?.value, 160);
-  if (!isEmail(email)) {
-    setFormStatus(status, lang === 'ru' ? 'Введите email, чтобы отправить безопасную ссылку для входа.' : 'Enter an email to send the secure sign-in link.', 'error');
-    return;
-  }
-  button.disabled = true;
-  try {
-    if (lastLeadSubmissionKey) {
-      await supabaseRequest('/rest/v1/rpc/attach_lead_access_email', {
-        method: 'POST',
-        headers: { Prefer: 'return=minimal' },
-        body: JSON.stringify({ p_submission_key: lastLeadSubmissionKey, p_email: email })
-      }).catch(() => null);
-    }
-    await sendClientMagicLink(email, '/client/');
-    setFormStatus(status, lang === 'ru' ? 'Magic link отправлен. Откройте письмо и перейдите по ссылке, чтобы увидеть свой диалог.' : 'Magic link sent. Open the email and follow the link to see your dialog.');
-  } catch (error) {
-    setFormStatus(status, lang === 'ru' ? 'Не удалось отправить magic link. Проверьте настройки Supabase Auth.' : 'Could not send the magic link. Check Supabase Auth settings.', 'error');
-  } finally {
-    button.disabled = false;
-  }
+  openUniversalChat({ notice: lang === 'ru' ? 'Заявка принята. Продолжим обсуждение здесь.' : 'Request accepted. We can continue here.' });
 });
 
 const homeProjectForm = $('#home-project-form');
@@ -522,9 +502,8 @@ homeProjectForm?.addEventListener('submit', async event => {
   try {
     const created = await submitLeadToSupabase({ name, contact, projectType: type, description: task, source: 'homepage', website: cleanFormValue(data.get('website'), 120), submissionKey });
     navigator.clipboard?.writeText(message).catch(() => {});
-    setFormStatus(status, created
-      ? (lang === 'ru' ? 'Спасибо. Заявка создана, мы свяжемся с вами и откроем приватный диалог после подтверждения контакта.' : 'Thank you. The request was created; we will contact you and open a private conversation after contact confirmation.')
-      : (lang === 'ru' ? 'Спасибо. Заявка сформирована, текст скопирован — можно продолжить диалог удобным способом без перехода со страницы.' : 'Thank you. The request is prepared and copied, so you can continue the conversation through any convenient channel without leaving the page.'));
+    setFormStatus(status, lang === 'ru' ? 'Спасибо. Заявка создана, продолжим обсуждение в чате.' : 'Thank you. The request was created; we can continue in chat.');
+    await attachLeadToUniversalChat({ submissionKey: created.submissionKey || submissionKey, name, contact, type, task });
     homeProjectForm.reset();
   } catch (error) {
     setFormStatus(status, lang === 'ru' ? 'Не удалось отправить заявку на сервер. Попробуйте ещё раз или напишите через контакты ниже.' : 'Could not submit the request to the server. Please try again or use the contact links below.', 'error');
@@ -621,6 +600,427 @@ async function supabaseRequest(pathname, options = {}, accessToken = '') {
   const content = await response.text();
   return content ? JSON.parse(content) : null;
 }
+
+const universalChatStorageKey = 'w1zzydev-universal-chat-v1';
+const universalChatPublicPaths = ['/', '/services/', '/projects/', '/pricing/', '/about/', '/reviews/', '/contact/', '/support/'];
+const universalChatState = {
+  widgetState: 'closed',
+  open: false,
+  ready: false,
+  token: '',
+  tokenHash: '',
+  conversationId: '',
+  messages: [],
+  unread: 0,
+  pollTimer: 0,
+  toastTimer: 0,
+  category: 'question'
+};
+const chatCategoryLabels = {
+  project: { ru: 'Хочу обсудить проект', en: 'Discuss a project' },
+  consultation: { ru: 'Нужна консультация', en: 'Need a consultation' },
+  question: { ru: 'У меня вопрос', en: 'I have a question' },
+  support: { ru: 'Нужна техподдержка', en: 'Need support' }
+};
+const chatSenderLabels = {
+  client: { ru: 'Клиент', en: 'Client' },
+  owner: { ru: 'W1ZZYDEV', en: 'W1ZZYDEV' },
+  assistant: { ru: 'Помощник', en: 'Assistant' },
+  system: { ru: 'Система', en: 'System' }
+};
+const chatStatusLabels = {
+  new: { ru: 'Новый', en: 'New' },
+  waiting_owner: { ru: 'Нужен ответ', en: 'Needs reply' },
+  waiting_client: { ru: 'Ожидает клиента', en: 'Waiting client' },
+  in_progress: { ru: 'В работе', en: 'In progress' },
+  closed: { ru: 'Закрыт', en: 'Closed' }
+};
+const assistantResponseProvider = {
+  replies: {
+    cost: {
+      ru: 'Стоимость зависит от объёма и сложности. После краткого описания задачи W1ZZYDEV подготовит оценку и этапы работы.',
+      en: 'Cost depends on scope and complexity. After a short brief, W1ZZYDEV will prepare an estimate and work stages.'
+    },
+    timeline: {
+      ru: 'Сроки зависят от структуры, контента и интеграций. Небольшие сайты обычно оцениваются быстрее, сложные продукты разбиваются на этапы.',
+      en: 'Timing depends on structure, content and integrations. Smaller sites are estimated faster; complex products are split into stages.'
+    },
+    process: {
+      ru: 'Работа проходит по этапам: обсуждение, оценка, прототип или дизайн, разработка, тестирование, запуск и поддержка.',
+      en: 'The process includes discussion, estimate, prototype or design, development, testing, launch and support.'
+    },
+    support: {
+      ru: 'W1ZZYDEV может помогать с доработками, исправлениями, обновлением страниц, скоростью и развитием уже запущенного сайта.',
+      en: 'W1ZZYDEV can help with improvements, fixes, page updates, speed and growth of an existing website.'
+    },
+    owner: {
+      ru: 'Специалист подключится к диалогу.',
+      en: 'A specialist will join the conversation.'
+    }
+  },
+  get(key) {
+    return this.replies[key]?.[lang] || this.replies[key]?.ru || '';
+  }
+};
+function chatLabel(map, key) {
+  return map[key]?.[lang] || map[key]?.ru || key || '—';
+}
+function createClientMessageId(prefix = 'msg') {
+  return `${prefix}-${Date.now()}-${crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(16).slice(2)}`;
+}
+function normalizeChatMessage(message) {
+  return {
+    id: message.id || message.client_message_id || createClientMessageId('local'),
+    client_message_id: message.client_message_id || '',
+    sender: message.sender || 'system',
+    body: message.body || '',
+    created_at: message.created_at || new Date().toISOString(),
+    pending: Boolean(message.pending),
+    failed: Boolean(message.failed)
+  };
+}
+function mergeChatMessages(currentMessages, incomingMessages) {
+  const byKey = new Map();
+  [...currentMessages, ...incomingMessages].map(normalizeChatMessage).forEach(message => {
+    const keys = [message.id, message.client_message_id].filter(Boolean);
+    const existingKey = keys.find(key => byKey.has(key));
+    const next = existingKey ? { ...byKey.get(existingKey), ...message, pending: message.pending && !message.id, failed: message.failed } : message;
+    keys.forEach(key => byKey.set(key, next));
+  });
+  return [...new Set(byKey.values())].sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+}
+function messageClass(message) {
+  return ['message-bubble', message.sender || 'system', message.pending ? 'pending' : '', message.failed ? 'failed' : ''].filter(Boolean).join(' ');
+}
+function isPublicChatPage() {
+  return universalChatPublicPaths.includes(path) || path.startsWith('/projects/');
+}
+function readChatSession() {
+  try {
+    const parsed = JSON.parse(sessionStorage.getItem(universalChatStorageKey) || '{}');
+    if (!parsed.token) return null;
+    return parsed;
+  } catch (error) {
+    return null;
+  }
+}
+function saveChatSession(session) {
+  sessionStorage.setItem(universalChatStorageKey, JSON.stringify({
+    token: session.token,
+    conversationId: session.conversationId || '',
+    expiresAt: session.expiresAt || ''
+  }));
+}
+function clearChatSession() {
+  sessionStorage.removeItem(universalChatStorageKey);
+  universalChatState.token = '';
+  universalChatState.tokenHash = '';
+  universalChatState.conversationId = '';
+  universalChatState.messages = [];
+}
+function universalChatRoot() {
+  return $('#w1zzy-chat');
+}
+function createUniversalChatWidget() {
+  if (!isPublicChatPage() || universalChatRoot()) return;
+  const root = document.createElement('section');
+  root.className = 'support-widget';
+  root.id = 'w1zzy-chat';
+  root.setAttribute('aria-live', 'polite');
+  root.innerHTML = `
+    <button class="support-widget-button" type="button" aria-expanded="false" aria-controls="w1zzy-chat-panel">
+      <span class="support-widget-icon" aria-hidden="true">✦</span>
+      <span><strong data-ru="Напишите нам" data-en="Message us">Напишите нам</strong><small data-ru="Ответим в ближайшее время" data-en="We reply soon">Ответим в ближайшее время</small></span>
+      <b class="support-widget-badge hidden" data-chat-badge>0</b>
+    </button>
+    <div class="support-widget-panel hidden" id="w1zzy-chat-panel" role="dialog" aria-label="W1ZZYDEV Support">
+      <div class="support-widget-head">
+        <div><strong>W1ZZYDEV Support</strong><small data-ru="Онлайн-диалог со студией" data-en="Online dialog with the studio">Онлайн-диалог со студией</small></div>
+        <div class="support-widget-controls"><button type="button" data-chat-minimize aria-label="Свернуть">−</button><button type="button" data-chat-close aria-label="Закрыть">×</button></div>
+      </div>
+      <div class="support-widget-body" data-chat-body></div>
+      <div class="support-widget-toast hidden" data-chat-toast role="status" aria-live="polite"></div>
+    </div>`;
+  document.body.appendChild(root);
+  const button = $('.support-widget-button', root);
+  button?.addEventListener('click', () => openUniversalChat());
+  $('[data-chat-close]', root)?.addEventListener('click', closeUniversalChat);
+  $('[data-chat-minimize]', root)?.addEventListener('click', minimizeUniversalChat);
+  setWidgetState('closed', { restoreFocus: false });
+  renderUniversalChat();
+  restoreUniversalChat().catch(() => {});
+}
+function clearChatToast() {
+  window.clearTimeout(universalChatState.toastTimer);
+  universalChatState.toastTimer = 0;
+  const toast = $('[data-chat-toast]', universalChatRoot());
+  if (!toast) return;
+  toast.className = 'support-widget-toast hidden';
+  toast.replaceChildren();
+}
+function showChatToast(message, type = 'success', duration = 2600, retryAction = null) {
+  const toast = $('[data-chat-toast]', universalChatRoot());
+  if (!toast) return;
+  window.clearTimeout(universalChatState.toastTimer);
+  toast.className = `support-widget-toast ${type}`;
+  const text = document.createElement('span');
+  text.textContent = message;
+  toast.replaceChildren(text);
+  if (retryAction) {
+    const retry = document.createElement('button');
+    retry.type = 'button';
+    retry.textContent = lang === 'ru' ? 'Повторить' : 'Retry';
+    retry.addEventListener('click', retryAction, { once: true });
+    toast.appendChild(retry);
+  }
+  universalChatState.toastTimer = window.setTimeout(clearChatToast, duration);
+}
+function setWidgetState(nextState = 'closed', options = {}) {
+  const root = universalChatRoot();
+  if (!root) return;
+  const state = ['open', 'closed', 'minimized'].includes(nextState) ? nextState : 'closed';
+  const launcher = $('.support-widget-button', root);
+  const panel = $('.support-widget-panel', root);
+  universalChatState.widgetState = state;
+  universalChatState.open = state === 'open';
+  root.dataset.widgetState = state;
+  launcher?.classList.toggle('hidden', state === 'open');
+  panel?.classList.toggle('hidden', state !== 'open');
+  launcher?.setAttribute('aria-expanded', String(state === 'open'));
+  if (state !== 'open') {
+    clearChatToast();
+    if (options.restoreFocus !== false) window.setTimeout(() => launcher?.focus(), 0);
+  } else {
+    universalChatState.unread = 0;
+    updateChatBadge();
+    window.setTimeout(() => $('[data-chat-message]', root)?.focus(), 80);
+  }
+}
+function openUniversalChat(options = {}) {
+  createUniversalChatWidget();
+  setWidgetState('open');
+  if (options.category) universalChatState.category = options.category;
+  renderUniversalChat(options.notice);
+}
+function closeUniversalChat() {
+  setWidgetState('closed');
+}
+function minimizeUniversalChat() {
+  setWidgetState('minimized');
+}
+function updateChatBadge() {
+  const badge = $('[data-chat-badge]');
+  if (!badge) return;
+  badge.textContent = String(universalChatState.unread);
+  badge.classList.toggle('hidden', universalChatState.unread <= 0);
+}
+function chatExternalLinksHtml() {
+  return `<div class="support-widget-external"><span data-ru="Удобнее в мессенджере?" data-en="Prefer a messenger?">Удобнее в мессенджере?</span>
+    <div><a href="${externalChannelUrl('telegram')}" target="_blank" rel="noopener noreferrer">Telegram</a><a href="${externalChannelUrl('whatsapp')}" target="_blank" rel="noopener noreferrer">WhatsApp</a><a href="${externalChannelUrl('instagram')}" target="_blank" rel="noopener noreferrer">Instagram</a><a href="${externalChannelUrl('email')}" target="_blank" rel="noopener noreferrer">Email</a></div></div>`;
+}
+function renderUniversalChat(notice = '') {
+  const body = $('[data-chat-body]', universalChatRoot());
+  if (!body) return;
+  if (!universalChatState.tokenHash) {
+    body.innerHTML = `
+      <form class="support-widget-start" data-chat-start-form>
+        ${notice ? `<div class="support-widget-note">${escapeHtml(notice)}</div>` : ''}
+        <div class="support-widget-topics" role="radiogroup" aria-label="Тема обращения">
+          ${Object.entries(chatCategoryLabels).map(([value, label]) => `<label><input type="radio" name="category" value="${value}" ${value === universalChatState.category ? 'checked' : ''}><span>${escapeHtml(label[lang])}</span></label>`).join('')}
+        </div>
+        <div class="field"><label data-ru="Как к вам обращаться?" data-en="What should we call you?">Как к вам обращаться?</label><input name="name" maxlength="80" required data-placeholder-ru="Ваше имя" data-placeholder-en="Your name"></div>
+        <div class="field"><label data-ru="Контакт — необязательно" data-en="Contact — optional">Контакт — необязательно</label><input name="contact" maxlength="160" data-placeholder-ru="Telegram, email или телефон" data-placeholder-en="Telegram, email or phone"></div>
+        <div class="field"><label data-ru="Чем можем помочь?" data-en="How can we help?">Чем можем помочь?</label><textarea name="message" maxlength="2000" required data-chat-message data-placeholder-ru="Напишите сообщение" data-placeholder-en="Write your message"></textarea></div>
+        <button class="button primary" type="submit" data-ru="Начать диалог" data-en="Start dialog">Начать диалог</button>
+        <p class="form-status" data-chat-status role="status" aria-live="polite"></p>
+        ${chatExternalLinksHtml()}
+      </form>`;
+    setLang(lang);
+    $('[data-chat-start-form]', body)?.addEventListener('submit', event => {
+      event.preventDefault();
+      startUniversalChatFromForm(event.currentTarget).catch(error => {
+        setFormStatus($('[data-chat-status]', body), (lang === 'ru' ? 'Не удалось начать диалог: ' : 'Could not start the dialog: ') + String(error.message || error), 'error');
+      });
+    });
+    return;
+  }
+  body.innerHTML = `
+    ${notice ? `<div class="support-widget-note">${escapeHtml(notice)}</div>` : ''}
+    <div class="support-widget-messages" data-chat-messages></div>
+    <form class="support-widget-reply" data-chat-reply-form>
+      <textarea name="message" maxlength="2000" required data-chat-message data-placeholder-ru="Сообщение для W1ZZYDEV" data-placeholder-en="Message for W1ZZYDEV"></textarea>
+      <button class="button primary" type="submit" data-ru="Отправить" data-en="Send">Отправить</button>
+    </form>`;
+  setLang(lang);
+  renderUniversalChatMessages();
+  $('[data-chat-reply-form]', body)?.addEventListener('submit', event => {
+    event.preventDefault();
+    sendUniversalChatMessage(event.currentTarget).catch(error => {
+      const textarea = $('[data-chat-message]', event.currentTarget);
+      const failedText = textarea?.dataset.failedText || '';
+      if (failedText && !textarea.value) textarea.value = failedText;
+      showChatToast(
+        lang === 'ru' ? 'Не удалось отправить сообщение. Попробуйте ещё раз.' : 'Could not send the message. Please try again.',
+        'error',
+        5000,
+        () => event.currentTarget.requestSubmit()
+      );
+    });
+  });
+}
+function renderUniversalChatMessages() {
+  const container = $('[data-chat-messages]');
+  if (!container) return;
+  container.innerHTML = universalChatState.messages.map(message => `
+    <article class="message-bubble ${message.sender === 'owner' ? 'owner' : 'client'}">
+      <strong>${message.sender === 'owner' ? 'W1ZZYDEV' : (message.sender === 'system' ? 'W1ZZYDEV' : (lang === 'ru' ? 'Вы' : 'You'))}</strong>
+      <p>${escapeHtml(message.body)}</p>
+      <small>${new Date(message.created_at).toLocaleString(lang === 'ru' ? 'ru-RU' : 'en-US')}</small>
+    </article>`).join('') || adminEmpty(lang === 'ru' ? 'Диалог создан. Напишите первое сообщение.' : 'The dialog is ready. Send the first message.');
+  container.scrollTop = container.scrollHeight;
+}
+async function startUniversalChat(payload) {
+  const token = createGuestToken();
+  const tokenHash = await hashGuestToken(token);
+  const result = await supabaseRequest('/rest/v1/rpc/universal_chat_start', {
+    method: 'POST',
+    headers: { Prefer: 'return=representation' },
+    body: JSON.stringify({
+      p_guest_token_hash: tokenHash,
+      p_name: cleanFormValue(payload.name, 80),
+      p_contact: cleanFormValue(payload.contact, 160),
+      p_category: payload.category || 'question',
+      p_message: cleanMultilineValue(payload.message, 2000),
+      p_page_url: location.href,
+      p_lead_submission_key: payload.leadSubmissionKey || null
+    })
+  });
+  const data = Array.isArray(result) ? result[0] : result;
+  universalChatState.token = token;
+  universalChatState.tokenHash = tokenHash;
+  universalChatState.conversationId = data?.conversation_id || '';
+  saveChatSession({ token, tokenHash, conversationId: universalChatState.conversationId, expiresAt: data?.expires_at || '' });
+  await loadUniversalChatMessages();
+  startUniversalChatPolling();
+  return data;
+}
+async function startUniversalChatFromForm(formElement) {
+  if (isRateLimited('w1zzydev-chat-start-last')) {
+    setFormStatus($('[data-chat-status]', formElement), lang === 'ru' ? 'Подождите немного перед созданием нового обращения.' : 'Please wait before creating another request.', 'error');
+    return;
+  }
+  const data = new FormData(formElement);
+  const button = $('button[type="submit"]', formElement);
+  button.disabled = true;
+  try {
+    universalChatState.category = cleanFormValue(data.get('category'), 40) || 'question';
+    await startUniversalChat({
+      name: data.get('name'),
+      contact: data.get('contact'),
+      category: universalChatState.category,
+      message: data.get('message')
+    });
+    renderUniversalChat();
+  } finally {
+    button.disabled = false;
+  }
+}
+async function loadUniversalChatMessages() {
+  if (!universalChatState.tokenHash) return [];
+  const result = await supabaseRequest('/rest/v1/rpc/universal_chat_messages', {
+    method: 'POST',
+    headers: { Prefer: 'return=representation' },
+    body: JSON.stringify({ p_guest_token_hash: universalChatState.tokenHash })
+  });
+  const messages = Array.isArray(result) ? result : [];
+  const previousLastId = universalChatState.messages.at(-1)?.id;
+  universalChatState.messages = messages;
+  const newOwnerMessages = previousLastId && messages.filter(message => message.sender === 'owner' && message.id !== previousLastId && new Date(message.created_at) > new Date(universalChatState.messages.find(item => item.id === previousLastId)?.created_at || 0)).length;
+  if (!universalChatState.open && newOwnerMessages) {
+    universalChatState.unread += newOwnerMessages;
+    updateChatBadge();
+  }
+  renderUniversalChatMessages();
+  return messages;
+}
+async function sendUniversalChatMessage(formElement) {
+  if (isRateLimited('w1zzydev-chat-message-last')) {
+    showChatToast(lang === 'ru' ? 'Подождите немного перед следующим сообщением.' : 'Please wait before sending another message.', 'error', 5000);
+    return;
+  }
+  const body = cleanMultilineValue(new FormData(formElement).get('message'), 2000);
+  if (!body) return;
+  const button = $('button[type="submit"]', formElement);
+  const textarea = $('[data-chat-message]', formElement);
+  button.disabled = true;
+  if (textarea) textarea.dataset.failedText = body;
+  try {
+    await supabaseRequest('/rest/v1/rpc/universal_chat_send', {
+      method: 'POST',
+      headers: { Prefer: 'return=minimal' },
+      body: JSON.stringify({ p_guest_token_hash: universalChatState.tokenHash, p_body: body })
+    });
+    formElement.reset();
+    if (textarea) textarea.dataset.failedText = '';
+    await loadUniversalChatMessages();
+    showChatToast(lang === 'ru' ? 'Сообщение отправлено' : 'Message sent', 'success', 2600);
+  } finally {
+    button.disabled = false;
+  }
+}
+async function restoreUniversalChat() {
+  const session = readChatSession();
+  if (!session) return;
+  universalChatState.token = session.token;
+  universalChatState.tokenHash = session.tokenHash || await hashGuestToken(session.token);
+  universalChatState.conversationId = session.conversationId || '';
+  try {
+    await loadUniversalChatMessages();
+    renderUniversalChat();
+    startUniversalChatPolling();
+  } catch (error) {
+    clearChatSession();
+    renderUniversalChat();
+  }
+}
+function startUniversalChatPolling() {
+  window.clearInterval(universalChatState.pollTimer);
+  universalChatState.pollTimer = window.setInterval(() => {
+    if (universalChatState.tokenHash) loadUniversalChatMessages().catch(() => {});
+  }, 12000);
+}
+async function attachLeadToUniversalChat(details) {
+  openUniversalChat({ category: 'project', notice: lang === 'ru' ? 'Заявка принята. Продолжим обсуждение здесь.' : 'Request accepted. We can continue here.' });
+  if (universalChatState.tokenHash) {
+    await supabaseRequest('/rest/v1/rpc/universal_chat_attach_lead', {
+      method: 'POST',
+      headers: { Prefer: 'return=minimal' },
+      body: JSON.stringify({
+        p_guest_token_hash: universalChatState.tokenHash,
+        p_lead_submission_key: details.submissionKey,
+        p_message: lang === 'ru' ? 'Заявка принята. Продолжим обсуждение здесь.' : 'Request accepted. We can continue here.'
+      })
+    }).catch(() => null);
+    await loadUniversalChatMessages().catch(() => {});
+    renderUniversalChat(lang === 'ru' ? 'Заявка принята. Продолжим обсуждение здесь.' : 'Request accepted. We can continue here.');
+    return;
+  }
+  await startUniversalChat({
+    name: details.name,
+    contact: details.contact,
+    category: 'project',
+    message: `${lang === 'ru' ? 'Заявка принята. Продолжим обсуждение здесь.' : 'Request accepted. We can continue here.'}\n\n${details.task || ''}`,
+    leadSubmissionKey: details.submissionKey
+  });
+  renderUniversalChat(lang === 'ru' ? 'Заявка принята. Продолжим обсуждение здесь.' : 'Request accepted. We can continue here.');
+}
+createUniversalChatWidget();
+document.addEventListener('click', event => {
+  const supportLink = event.target.closest('a[href="/support/"], [data-open-chat]');
+  if (!supportLink || path === '/support/') return;
+  event.preventDefault();
+  openUniversalChat({ category: supportLink.getAttribute('href') === '/support/' ? 'support' : 'question' });
+});
 
 async function signInModerator(email, password) {
   const config = await getSupabaseConfig();
@@ -1124,24 +1524,22 @@ supportTicketForm?.addEventListener('submit', async event => {
     p_priority: cleanFormValue(data.get('priority'), 20),
     p_description: cleanMultilineValue(data.get('description'), 2000)
   };
-  if (!isEmail(payload.p_email)) {
-    setFormStatus(status, lang === 'ru' ? 'Введите email для защищённого доступа к тикету.' : 'Enter an email for secure ticket access.', 'error');
-    return;
-  }
   button.disabled = true;
   try {
-    await supabaseRequest('/rest/v1/rpc/create_support_ticket', {
-      method: 'POST',
-      headers: { Prefer: 'return=representation' },
-      body: JSON.stringify(payload)
+    await startUniversalChat({
+      name: payload.p_name,
+      contact: payload.p_email,
+      category: 'support',
+      message: `${payload.p_subject}\n\n${payload.p_description}${payload.p_project ? `\n\nПроект: ${payload.p_project}` : ''}`
     });
     lastSupportEmail = payload.p_email;
     updateChannelActionLinks($('#support-next-actions'), supportText, 'W1ZZYDEV — support');
     $('#support-next-actions')?.classList.remove('hidden');
     supportTicketForm.reset();
-    setFormStatus(status, lang === 'ru' ? 'Тикет создан. Можно продолжить на сайте или во внешнем канале.' : 'Ticket created. You can continue on the website or through an external channel.');
+    openUniversalChat({ category: 'support', notice: lang === 'ru' ? 'Обращение создано. Продолжим здесь.' : 'The request is created. We can continue here.' });
+    setFormStatus(status, lang === 'ru' ? 'Обращение создано в общем чате W1ZZYDEV.' : 'The request was created in the shared W1ZZYDEV chat.');
   } catch (error) {
-    setFormStatus(status, (lang === 'ru' ? 'Не удалось создать тикет: ' : 'Could not create ticket: ') + String(error.message || error), 'error');
+    setFormStatus(status, (lang === 'ru' ? 'Не удалось создать обращение: ' : 'Could not create request: ') + String(error.message || error), 'error');
   } finally {
     button.disabled = false;
   }
@@ -1151,15 +1549,16 @@ $('#support-send-magic')?.addEventListener('click', async event => {
   const button = event.currentTarget;
   const status = $('#support-status');
   if (!isEmail(lastSupportEmail)) {
-    setFormStatus(status, lang === 'ru' ? 'Создайте тикет с email, чтобы отправить magic link.' : 'Create a ticket with an email to send a magic link.', 'error');
+    openUniversalChat({ category: 'support' });
+    setFormStatus(status, lang === 'ru' ? 'Чат открыт. Можно продолжить без email.' : 'The chat is open. You can continue without email.');
     return;
   }
   button.disabled = true;
   try {
-    await sendClientMagicLink(lastSupportEmail, '/client/');
-    setFormStatus(status, lang === 'ru' ? 'Magic link отправлен. После входа тикет будет доступен в клиентском диалоге.' : 'Magic link sent. After sign-in, the ticket will be available in the client dialog.');
+    openUniversalChat({ category: 'support' });
+    setFormStatus(status, lang === 'ru' ? 'Чат открыт на этой странице.' : 'The chat is open on this page.');
   } catch (error) {
-    setFormStatus(status, lang === 'ru' ? 'Не удалось отправить magic link.' : 'Could not send the magic link.', 'error');
+    setFormStatus(status, lang === 'ru' ? 'Не удалось открыть чат.' : 'Could not open chat.', 'error');
   } finally {
     button.disabled = false;
   }
@@ -1289,12 +1688,13 @@ async function renderModeration() {
   setAdminLoading(true);
   setAdminMessage('');
   try {
-    const [reviews, leads, conversations, tickets, clients, activity] = await Promise.all([
+    const [reviews, leads, conversations, tickets, clients, messages, activity] = await Promise.all([
       getAllReviews(),
       supabaseAdmin('/rest/v1/leads?select=id,name,contact,contact_method,preferred_channel,last_contact_channel,project_type,description,source,status,conversation_id,client_id,created_at,updated_at&order=created_at.desc'),
-      supabaseAdmin('/rest/v1/conversations?select=id,client_id,lead_id,support_ticket_id,subject,unread_for_owner,created_at,updated_at&order=updated_at.desc'),
+      supabaseAdmin('/rest/v1/conversations?select=id,client_id,lead_id,support_ticket_id,subject,category,status,page_url,unread_for_owner,created_at,updated_at&order=updated_at.desc'),
       supabaseAdmin('/rest/v1/support_tickets?select=id,client_id,conversation_id,subject,project,priority,description,status,contact_method,last_contact_channel,created_at,updated_at&order=created_at.desc'),
       supabaseAdmin('/rest/v1/clients?select=id,name,contact,email,preferred_channel,last_contact_channel,created_at,updated_at&order=created_at.desc'),
+      supabaseAdmin('/rest/v1/messages?select=id,conversation_id,sender,body,created_at&order=created_at.desc&limit=200').catch(() => []),
       supabaseAdmin('/rest/v1/admin_activity?select=id,action,entity_type,entity_id,created_at&order=created_at.desc&limit=20').catch(() => [])
     ]);
     adminState.reviews = reviews;
@@ -1302,6 +1702,7 @@ async function renderModeration() {
     adminState.conversations = conversations || [];
     adminState.tickets = tickets || [];
     adminState.clients = clients || [];
+    adminState.messages = messages || [];
     adminState.activity = activity || [];
 
     renderAdminDashboard();
@@ -1367,7 +1768,7 @@ function renderAdminDashboard() {
   const counts = {
     'new-leads': adminState.leads.filter(item => item.status === 'new').length,
     'unread-dialogs': adminState.conversations.filter(item => Number(item.unread_for_owner || 0) > 0).length,
-    'open-tickets': adminState.tickets.filter(item => item.status === 'open').length,
+    'open-tickets': adminState.conversations.filter(item => !['closed','resolved'].includes(item.status)).length,
     'pending-reviews': adminState.reviews.filter(item => item.status === 'pending').length
   };
   Object.entries(counts).forEach(([key, value]) => {
@@ -1394,13 +1795,25 @@ function renderAdminLeads() {
 function renderAdminDialogs() {
   const container = $('#admin-dialogs');
   if (!container) return;
-  container.innerHTML = adminState.conversations.map(dialog => {
+  const filter = $('#message-category-filter')?.value || '';
+  const dialogs = adminState.conversations.filter(dialog => {
+    if (!filter) return true;
+    if (filter === 'closed') return ['closed', 'resolved'].includes(dialog.status);
+    return (dialog.category || (dialog.lead_id ? 'project' : dialog.support_ticket_id ? 'support' : 'question')) === filter && !['closed', 'resolved'].includes(dialog.status);
+  });
+  container.innerHTML = dialogs.map(dialog => {
     const client = adminState.clients.find(item => item.id === dialog.client_id);
+    const lead = adminState.leads.find(item => item.id === dialog.lead_id);
+    const ticket = adminState.tickets.find(item => item.id === dialog.support_ticket_id);
+    const category = dialog.category || (dialog.lead_id ? 'project' : dialog.support_ticket_id ? 'support' : 'question');
+    const lastMessage = adminState.messages.find(item => item.conversation_id === dialog.id);
     return `<article class="admin-card dialog-item ${adminState.selectedConversationId === dialog.id ? 'active' : ''}" data-dialog-id="${dialog.id}">
-      <div class="admin-card-head"><div><strong>${escapeHtml(dialog.subject || 'Диалог')}</strong><small>${escapeHtml(client?.name || 'Клиент')}</small></div><span class="moderation-badge">${Number(dialog.unread_for_owner || 0)}</span></div>
-      <p>${dialog.lead_id ? 'Связан с заявкой' : dialog.support_ticket_id ? 'Связан с тикетом' : 'Общий диалог'}</p>
+      <div class="admin-card-head"><div><strong>${escapeHtml(client?.name || lead?.name || ticket?.requester_name || 'Клиент')}</strong><small>${escapeHtml(chatCategoryLabels[category]?.ru || category)}</small></div><span class="moderation-badge">${Number(dialog.unread_for_owner || 0)}</span></div>
+      <p>${escapeHtml(lastMessage?.body || dialog.subject || 'Сообщений пока нет')}</p>
+      <dl><dt>Тема</dt><dd>${escapeHtml(dialog.subject || chatCategoryLabels[category]?.ru || 'Обращение')}</dd><dt>Заявка</dt><dd>${lead ? escapeHtml(lead.project_type) : 'нет'}</dd><dt>Страница</dt><dd>${escapeHtml(dialog.page_url || 'не указана')}</dd><dt>Статус</dt><dd>${escapeHtml(dialog.status || 'open')}</dd><dt>Последнее сообщение</dt><dd>${lastMessage?.created_at ? new Date(lastMessage.created_at).toLocaleString('ru-RU') : '—'}</dd></dl>
+      <div class="admin-actions"><select data-dialog-category="${dialog.id}">${Object.entries(chatCategoryLabels).map(([value,label]) => `<option value="${value}" ${category === value ? 'selected' : ''}>${escapeHtml(label.ru)}</option>`).join('')}</select><select data-dialog-status="${dialog.id}">${['open','in_progress','waiting_client','closed'].map(value => `<option value="${value}" ${(dialog.status || 'open') === value ? 'selected' : ''}>${escapeHtml(value)}</option>`).join('')}</select></div>
     </article>`;
-  }).join('') || adminEmpty(adminText('Диалогов пока нет.', 'There are no dialogs yet.'));
+  }).join('') || adminEmpty(adminText('Сообщений пока нет.', 'There are no messages yet.'));
 }
 
 async function loadDialogMessages(conversationId) {
@@ -1551,6 +1964,7 @@ $$('.admin-tab').forEach(tab => tab.addEventListener('click', () => {
 }));
 
 $('#lead-status-filter')?.addEventListener('change', renderAdminLeads);
+$('#message-category-filter')?.addEventListener('change', renderAdminDialogs);
 
 $('#admin-leads')?.addEventListener('change', async event => {
   const select = event.target.closest('select[data-lead-status]');
@@ -1606,10 +2020,35 @@ $('#admin-tickets')?.addEventListener('change', async event => {
 });
 
 $('#admin-dialogs')?.addEventListener('click', event => {
+  if (event.target.closest('select')) return;
   const card = event.target.closest('[data-dialog-id]');
   if (card) loadDialogMessages(card.dataset.dialogId).catch(error => {
     if (moderationMessage) moderationMessage.textContent = lang === 'ru' ? 'Не удалось открыть диалог.' : 'Could not open dialog.';
   });
+});
+
+$('#admin-dialogs')?.addEventListener('change', async event => {
+  const categorySelect = event.target.closest('select[data-dialog-category]');
+  const statusSelect = event.target.closest('select[data-dialog-status]');
+  if (!categorySelect && !statusSelect) return;
+  const select = categorySelect || statusSelect;
+  const id = categorySelect?.dataset.dialogCategory || statusSelect?.dataset.dialogStatus;
+  select.disabled = true;
+  try {
+    await supabaseAdmin(`/rest/v1/conversations?id=eq.${encodeURIComponent(id)}`, {
+      method: 'PATCH',
+      headers: { Prefer: 'return=minimal' },
+      body: JSON.stringify({
+        ...(categorySelect ? { category: categorySelect.value } : { status: statusSelect.value }),
+        updated_at: new Date().toISOString()
+      })
+    });
+    await renderModeration();
+    setAdminMessage(adminText('Диалог обновлён.', 'Dialog updated.'));
+  } catch (error) {
+    setAdminMessage(describeSupabaseError(error), 'error');
+    select.disabled = false;
+  }
 });
 
 $('#dialog-reply-form')?.addEventListener('submit', async event => {
