@@ -2,3 +2,10 @@
 Thumbs.db
 .vscode/
 .idea/
+.env
+.env.*
+!.env.example
+node_modules/
+.pnpm-store/
+secure-platform/node_modules/
+secure-platform/dist/

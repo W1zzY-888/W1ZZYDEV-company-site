@@ -1,34 +1,101 @@
 <!doctype html>
-<html lang="ru"><head>
-  <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Модерация отзывов — W1ZZYDEV</title>
-  <meta name="description" content="Закрытая панель модерации отзывов W1ZZYDEV."><meta name="robots" content="noindex,nofollow,noarchive">
-  <link rel="icon" href="/favicon.ico" sizes="any"><link rel="icon" type="image/png" sizes="48x48" href="/assets/favicon-48.png"><link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png"><link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png"><link rel="manifest" href="/site.webmanifest"><meta name="theme-color" content="#070908"><link rel="stylesheet" href="/styles.css?v=3f8c9e1">
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Панель W1ZZYDEV — заявки, диалоги и отзывы</title>
+  <meta name="description" content="Закрытая Supabase-панель W1ZZYDEV для заявок, диалогов, техподдержки, клиентов и модерации отзывов.">
+  <meta name="robots" content="noindex,nofollow">
+  <link rel="icon" href="/favicon.ico" sizes="any">
+  <link rel="stylesheet" href="/styles.css?v=b6e2a91">
 </head>
-<body data-title-ru="Модерация отзывов — W1ZZYDEV" data-title-en="Review moderation — W1ZZYDEV" data-description-ru="Закрытая панель модерации отзывов W1ZZYDEV." data-description-en="Private W1ZZYDEV review moderation panel.">
+<body data-title-ru="Панель W1ZZYDEV — заявки, диалоги и отзывы" data-title-en="W1ZZYDEV Panel — requests, dialogs and reviews">
 <div class="site">
   <header class="header"><div class="container header-inner">
-    <a class="brand" href="/"><img class="brand-icon" src="/assets/favicon-48.png" alt=""><span class="brand-mark">&lt;W1D&gt;</span>W1ZZYDEV</a>
-    <nav class="desktop-nav"><a class="nav-link" href="/reviews/" data-ru="Отзывы" data-en="Reviews"></a><a class="nav-link" href="/" data-ru="На сайт" data-en="Back to website"></a></nav>
+    <a class="brand" href="/"><span class="brand-mark">&lt;W1D&gt;</span>W1ZZYDEV</a>
+    <nav class="desktop-nav"><a class="nav-link" href="/" data-ru="На сайт" data-en="Back to site">На сайт</a></nav>
     <div class="header-tools"><button class="lang">EN</button><button class="menu-toggle" aria-label="Открыть меню"><i></i></button></div>
   </div></header>
   <main>
-    <section class="page-hero moderation-hero"><div class="container"><div class="breadcrumbs"><a href="/">W1ZZYDEV</a> / MODERATION</div><p class="eyebrow" data-ru="Закрытая панель" data-en="Private panel"></p><h1 data-ru="Модерация отзывов" data-en="Review moderation"></h1><p class="lead" data-ru="Проверяйте новые отзывы перед публикацией на сайте." data-en="Review submissions before publishing them on the website."></p></div></section>
+    <section class="page-hero moderation-hero"><div class="container">
+      <div class="breadcrumbs"><a href="/">W1ZZYDEV</a> / ADMIN</div>
+      <p class="eyebrow" data-ru="Закрытая панель" data-en="Private panel">Закрытая панель</p>
+      <h1 data-ru="Управление заявками, диалогами, поддержкой и отзывами." data-en="Manage requests, dialogs, support and reviews.">Управление заявками, диалогами, поддержкой и отзывами.</h1>
+      <p class="lead" data-ru="Вход выполняется через существующую авторизацию Supabase. Доступ к данным дополнительно ограничивается RLS-политиками на уровне базы." data-en="Sign-in uses the existing Supabase authentication. Data access is additionally restricted by database-level RLS policies.">Вход выполняется через существующую авторизацию Supabase. Доступ к данным дополнительно ограничивается RLS-политиками на уровне базы.</p>
+    </div></section>
     <section class="section moderation-section"><div class="container">
       <form class="form moderation-login" id="moderation-login">
-        <p class="eyebrow" data-ru="Вход модератора" data-en="Moderator sign in"></p>
-        <h2 data-ru="Доступ через Supabase" data-en="Supabase access"></h2>
-        <div class="field"><label data-ru="Email" data-en="Email"></label><input type="email" name="email" autocomplete="username" required></div>
-        <div class="field"><label data-ru="Пароль" data-en="Password"></label><input type="password" name="password" autocomplete="current-password" minlength="6" required></div>
-        <button class="button primary" type="submit" data-ru="Войти" data-en="Sign in"></button>
+        <p class="eyebrow" data-ru="Вход владельца" data-en="Owner sign in">Вход владельца</p>
+        <h2 data-ru="Войдите в Supabase OWNER-аккаунт." data-en="Sign in to the Supabase OWNER account.">Войдите в Supabase OWNER-аккаунт.</h2>
+        <div class="field"><label>Email</label><input type="email" name="email" autocomplete="username" required></div>
+        <div class="field"><label data-ru="Пароль" data-en="Password">Пароль</label><input type="password" name="password" autocomplete="current-password" minlength="6" required></div>
+        <button class="button primary" type="submit" data-ru="Войти в панель" data-en="Sign in">Войти в панель</button>
+        <button class="button password-reset-toggle" id="forgot-password-toggle" type="button" data-ru="Забыли пароль?" data-en="Forgot password?">Забыли пароль?</button>
+      </form>
+      <form class="form moderation-login hidden" id="forgot-password-form">
+        <p class="eyebrow" data-ru="Восстановление доступа" data-en="Access recovery">Восстановление доступа</p>
+        <h2 data-ru="Получите ссылку для нового пароля." data-en="Get a link for a new password.">Получите ссылку для нового пароля.</h2>
+        <p class="form-note" data-ru="Введите email OWNER-аккаунта Supabase. Если аккаунт существует, Supabase отправит письмо со ссылкой на установку нового пароля." data-en="Enter the Supabase OWNER account email. If the account exists, Supabase will send a link to set a new password.">Введите email OWNER-аккаунта Supabase. Если аккаунт существует, Supabase отправит письмо со ссылкой на установку нового пароля.</p>
+        <div class="field"><label>Email</label><input type="email" name="email" autocomplete="username" required></div>
+        <button class="button primary" type="submit" data-ru="Отправить ссылку" data-en="Send link">Отправить ссылку</button>
+        <button class="button" id="forgot-password-cancel" type="button" data-ru="Вернуться ко входу" data-en="Back to sign in">Вернуться ко входу</button>
       </form>
       <p class="form-status visible moderation-message" id="moderation-message" role="status" aria-live="polite"></p>
+
       <div class="moderation-panel hidden" id="moderation-panel">
-        <div class="moderation-toolbar"><div><p class="eyebrow" data-ru="Очередь отзывов" data-en="Review queue"></p><h2 data-ru="Управление публикациями" data-en="Manage publications"></h2></div><button class="button" id="moderation-logout" type="button" data-ru="Выйти" data-en="Sign out"></button></div>
-        <div class="moderation-stats"><div><strong data-moderation-count="pending">0</strong><span data-ru="На модерации" data-en="Pending"></span></div><div><strong data-moderation-count="published">0</strong><span data-ru="Опубликовано" data-en="Published"></span></div><div><strong data-moderation-count="rejected">0</strong><span data-ru="Отклонено" data-en="Rejected"></span></div></div>
-        <div class="moderation-list" id="moderation-list"></div>
+        <div class="moderation-toolbar"><div><p class="eyebrow" data-ru="Supabase Admin" data-en="Supabase Admin">Supabase Admin</p><h2 data-ru="Рабочая панель W1ZZYDEV" data-en="W1ZZYDEV workspace">Рабочая панель W1ZZYDEV</h2></div><button class="button" id="moderation-logout" type="button" data-ru="Выйти" data-en="Sign out">Выйти</button></div>
+        <nav class="admin-tabs" aria-label="Разделы панели">
+          <button class="admin-tab active" type="button" data-admin-tab="dashboard" data-ru="Главная" data-en="Dashboard">Главная</button>
+          <button class="admin-tab" type="button" data-admin-tab="leads" data-ru="Заявки" data-en="Requests">Заявки</button>
+          <button class="admin-tab" type="button" data-admin-tab="dialogs" data-ru="Диалоги" data-en="Dialogs">Диалоги</button>
+          <button class="admin-tab" type="button" data-admin-tab="support" data-ru="Техподдержка" data-en="Support">Техподдержка</button>
+          <button class="admin-tab" type="button" data-admin-tab="clients" data-ru="Клиенты" data-en="Clients">Клиенты</button>
+          <button class="admin-tab" type="button" data-admin-tab="reviews" data-ru="Отзывы" data-en="Reviews">Отзывы</button>
+          <button class="admin-tab" type="button" data-admin-tab="security" data-ru="Безопасность" data-en="Security">Безопасность</button>
+        </nav>
+
+        <section class="admin-view active" data-admin-view="dashboard">
+          <div class="moderation-stats admin-stats">
+            <div><strong data-admin-count="new-leads">0</strong><span data-ru="Новые заявки" data-en="New requests">Новые заявки</span></div>
+            <div><strong data-admin-count="unread-dialogs">0</strong><span data-ru="Непрочитанные диалоги" data-en="Unread dialogs">Непрочитанные диалоги</span></div>
+            <div><strong data-admin-count="open-tickets">0</strong><span data-ru="Открытые тикеты" data-en="Open tickets">Открытые тикеты</span></div>
+            <div><strong data-admin-count="pending-reviews">0</strong><span data-ru="Отзывы на модерации" data-en="Pending reviews">Отзывы на модерации</span></div>
+          </div>
+        </section>
+
+        <section class="admin-view" data-admin-view="leads">
+          <div class="admin-section-head"><h3 data-ru="Заявки с сайта" data-en="Website requests">Заявки с сайта</h3><select id="lead-status-filter"><option value="" data-ru="Все статусы" data-en="All statuses">Все статусы</option><option value="new">Новая</option><option value="in_progress">В работе</option><option value="waiting_client">Ожидает клиента</option><option value="completed">Завершена</option><option value="archived">Архив</option><option value="spam">Спам</option></select></div>
+          <div class="admin-list" id="admin-leads"></div>
+        </section>
+
+        <section class="admin-view" data-admin-view="dialogs">
+          <div class="admin-split"><div><h3 data-ru="Диалоги" data-en="Dialogs">Диалоги</h3><div class="admin-list" id="admin-dialogs"></div></div><div class="dialog-panel"><h3 id="dialog-title" data-ru="Выберите диалог" data-en="Choose a dialog">Выберите диалог</h3><div class="dialog-messages" id="dialog-messages"></div><form class="dialog-reply" id="dialog-reply-form"><textarea name="message" required maxlength="2000" data-placeholder-ru="Ответ от имени W1ZZYDEV" data-placeholder-en="Reply as W1ZZYDEV"></textarea><button class="button primary" type="submit" data-ru="Отправить" data-en="Send">Отправить</button></form></div></div>
+        </section>
+
+        <section class="admin-view" data-admin-view="support">
+          <h3 data-ru="Техподдержка" data-en="Support">Техподдержка</h3>
+          <div class="admin-list" id="admin-tickets"></div>
+        </section>
+
+        <section class="admin-view" data-admin-view="clients">
+          <h3 data-ru="Клиенты" data-en="Clients">Клиенты</h3>
+          <div class="admin-list client-grid" id="admin-clients"></div>
+        </section>
+
+        <section class="admin-view" data-admin-view="reviews">
+          <div class="moderation-stats"><div><strong data-moderation-count="pending">0</strong><span data-ru="На модерации" data-en="Pending">На модерации</span></div><div><strong data-moderation-count="published">0</strong><span data-ru="Опубликовано" data-en="Published">Опубликовано</span></div><div><strong data-moderation-count="rejected">0</strong><span data-ru="Отклонено" data-en="Rejected">Отклонено</span></div></div>
+          <div class="moderation-list" id="moderation-list"></div>
+        </section>
+
+        <section class="admin-view" data-admin-view="security">
+          <h3 data-ru="Безопасность" data-en="Security">Безопасность</h3>
+          <div class="admin-list" id="admin-security"></div>
+        </section>
       </div>
     </div></section>
   </main>
-  <footer class="footer"><div class="container"><div class="footer-bottom"><span>© 2026 W1ZZYDEV</span><span>PRIVATE MODERATION PANEL</span></div></div></footer>
-</div><script src="/app.js?v=9a62d4e"></script></body></html>
+  <footer class="footer"><div class="container"><div class="footer-bottom"><span>© 2026 W1ZZYDEV</span><span data-ru="Закрытая панель" data-en="Private panel">Закрытая панель</span></div></div></footer>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/app.js?v=b6e2a92"></script>
+</body></html>
