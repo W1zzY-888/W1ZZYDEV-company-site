@@ -544,3 +544,5 @@ body[data-theme="light"] .support-widget textarea,body[data-theme="light"] .supp
 body[data-theme="light"] .dialog-reply{background:linear-gradient(180deg,rgba(255,255,255,0),rgba(255,255,255,.92) 18%)}
 @media(max-width:980px){.dialog-panel{height:680px;min-height:520px}}
 @media(max-width:620px){.dialog-panel{height:calc(100dvh - 210px);min-height:480px}.dialog-panel-head{display:grid}.support-widget-quick{max-height:96px;overflow:auto}.support-widget-rating textarea{min-height:70px}}
+
+.admin-inline-control{display:inline-flex;align-items:center;gap:7px;color:var(--muted);font:850 10px/1.1 monospace;text-transform:uppercase}.admin-inline-control select{min-height:40px}

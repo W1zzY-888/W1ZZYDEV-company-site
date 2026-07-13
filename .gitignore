@@ -5,6 +5,16 @@ Thumbs.db
 .env
 .env.*
 !.env.example
+supabase/.env
+supabase/.env.*
+supabase/functions/.env
+supabase/functions/.env.*
+supabase/functions/**/.env
+supabase/functions/**/.env.*
+*.log
+*.tmp
+tmp/
+temp/
 node_modules/
 .pnpm-store/
 secure-platform/node_modules/
