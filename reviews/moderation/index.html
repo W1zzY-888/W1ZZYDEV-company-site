@@ -7,7 +7,7 @@
   <meta name="description" content="Закрытая Supabase-панель W1ZZYDEV для заявок, диалогов, техподдержки, клиентов и модерации отзывов.">
   <meta name="robots" content="noindex,nofollow">
   <link rel="icon" href="/favicon.ico" sizes="any">
-  <link rel="stylesheet" href="/styles.css?v=b6e2a98">
+  <link rel="stylesheet" href="/styles.css?v=b6e2a99">
 </head>
 <body data-title-ru="Панель W1ZZYDEV — заявки, диалоги и отзывы" data-title-en="W1ZZYDEV Panel — requests, dialogs and reviews">
 <div class="site">
@@ -47,8 +47,7 @@
         <nav class="admin-tabs" aria-label="Разделы панели">
           <button class="admin-tab active" type="button" data-admin-tab="dashboard" data-ru="Главная" data-en="Dashboard">Главная</button>
           <button class="admin-tab" type="button" data-admin-tab="leads" data-ru="Заявки" data-en="Requests">Заявки</button>
-          <button class="admin-tab" type="button" data-admin-tab="dialogs" data-ru="Диалоги" data-en="Dialogs">Диалоги</button>
-          <button class="admin-tab" type="button" data-admin-tab="support" data-ru="Техподдержка" data-en="Support">Техподдержка</button>
+          <button class="admin-tab" type="button" data-admin-tab="messages" data-ru="Сообщения" data-en="Messages">Сообщения</button>
           <button class="admin-tab" type="button" data-admin-tab="clients" data-ru="Клиенты" data-en="Clients">Клиенты</button>
           <button class="admin-tab" type="button" data-admin-tab="reviews" data-ru="Отзывы" data-en="Reviews">Отзывы</button>
           <button class="admin-tab" type="button" data-admin-tab="security" data-ru="Безопасность" data-en="Security">Безопасность</button>
@@ -58,7 +57,7 @@
           <div class="moderation-stats admin-stats">
             <div><strong data-admin-count="new-leads">0</strong><span data-ru="Новые заявки" data-en="New requests">Новые заявки</span></div>
             <div><strong data-admin-count="unread-dialogs">0</strong><span data-ru="Непрочитанные диалоги" data-en="Unread dialogs">Непрочитанные диалоги</span></div>
-            <div><strong data-admin-count="open-tickets">0</strong><span data-ru="Открытые тикеты" data-en="Open tickets">Открытые тикеты</span></div>
+            <div><strong data-admin-count="open-tickets">0</strong><span data-ru="Открытые обращения" data-en="Open threads">Открытые обращения</span></div>
             <div><strong data-admin-count="pending-reviews">0</strong><span data-ru="Отзывы на модерации" data-en="Pending reviews">Отзывы на модерации</span></div>
           </div>
         </section>
@@ -68,13 +67,9 @@
           <div class="admin-list" id="admin-leads"></div>
         </section>
 
-        <section class="admin-view" data-admin-view="dialogs">
-          <div class="admin-split"><div><h3 data-ru="Диалоги" data-en="Dialogs">Диалоги</h3><div class="admin-list" id="admin-dialogs"></div></div><div class="dialog-panel"><h3 id="dialog-title" data-ru="Выберите диалог" data-en="Choose a dialog">Выберите диалог</h3><div class="dialog-messages" id="dialog-messages"></div><form class="dialog-reply" id="dialog-reply-form"><textarea name="message" required maxlength="2000" data-placeholder-ru="Ответ от имени W1ZZYDEV" data-placeholder-en="Reply as W1ZZYDEV"></textarea><button class="button primary" type="submit" data-ru="Отправить" data-en="Send">Отправить</button></form></div></div>
-        </section>
-
-        <section class="admin-view" data-admin-view="support">
-          <h3 data-ru="Техподдержка" data-en="Support">Техподдержка</h3>
-          <div class="admin-list" id="admin-tickets"></div>
+        <section class="admin-view" data-admin-view="messages">
+          <div class="admin-section-head"><div><h3 data-ru="Сообщения" data-en="Messages">Сообщения</h3><p class="form-note" data-ru="Единая история консультаций, заявок, вопросов и техподдержки." data-en="One history for consultations, requests, questions and support.">Единая история консультаций, заявок, вопросов и техподдержки.</p><span class="admin-sync-status" id="admin-sync-status" data-sync-mode="idle">Синхронизация: ожидание</span></div><select id="message-category-filter"><option value="" data-ru="Все" data-en="All">Все</option><option value="consultation" data-ru="Консультации" data-en="Consultations">Консультации</option><option value="project" data-ru="Заявки" data-en="Requests">Заявки</option><option value="question" data-ru="Вопросы" data-en="Questions">Вопросы</option><option value="support" data-ru="Техподдержка" data-en="Support">Техподдержка</option><option value="closed" data-ru="Закрытые" data-en="Closed">Закрытые</option></select></div>
+          <div class="admin-split"><div><div class="admin-list" id="admin-dialogs"></div></div><div class="dialog-panel"><div class="dialog-panel-head"><h3 id="dialog-title" data-ru="Выберите диалог" data-en="Choose a dialog">Выберите диалог</h3><div class="admin-actions" id="dialog-actions"></div></div><div class="dialog-messages" id="dialog-messages"></div><form class="dialog-reply" id="dialog-reply-form"><textarea name="message" required maxlength="2000" data-placeholder-ru="Ответ от имени W1ZZYDEV" data-placeholder-en="Reply as W1ZZYDEV"></textarea><button class="button primary" type="submit" data-ru="Отправить" data-en="Send">Отправить</button></form></div></div>
         </section>
 
         <section class="admin-view" data-admin-view="clients">
@@ -97,5 +92,5 @@
   <footer class="footer"><div class="container"><div class="footer-bottom"><span>© 2026 W1ZZYDEV</span><span data-ru="Закрытая панель" data-en="Private panel">Закрытая панель</span></div></div></footer>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="/app.js?v=b6e2a98"></script>
+<script src="/app.js?v=b6e2a99"></script>
 </body></html>
