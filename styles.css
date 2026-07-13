@@ -353,3 +353,112 @@ body[data-theme="light"] .compact-request-form{background:rgba(255,255,255,.78)}
   .compact-request-form{padding:20px}
   .float-cta{right:12px;bottom:12px;min-height:44px}
 }
+
+/* Multi-page polish: keep fixed CTA and contact cards inside narrow viewports. */
+.float-cta{
+  position:fixed!important;
+  left:auto;
+  max-width:calc(100vw - 28px);
+  white-space:nowrap;
+}
+.contact-layout,.contact-layout>*,.contact-links,.contact-link{
+  min-width:0;
+  max-width:100%;
+}
+.contact-link{
+  width:100%;
+  gap:14px;
+  overflow-wrap:anywhere;
+}
+.contact-link strong{
+  flex:0 0 auto;
+}
+.cta,.cta>*{
+  min-width:0;
+}
+@media(max-width:620px){
+  .float-cta{
+    right:14px;
+    bottom:14px;
+    transform:none!important;
+  }
+  .contact-link{
+    padding:18px;
+  }
+  .cta .button{
+    width:100%;
+    max-width:100%;
+    white-space:normal;
+    text-align:center;
+    padding-inline:14px;
+  }
+}
+@media(max-width:360px){
+  .float-cta{
+    right:10px;
+    bottom:10px;
+    min-height:42px;
+    padding-inline:14px;
+    font-size:12px;
+  }
+  .contact-link{
+    padding:16px;
+  }
+}
+
+/* Client portal and post-submit channel choice. */
+.after-submit-panel{
+  display:grid;
+  gap:18px;
+  margin-top:20px;
+  padding:22px;
+  border:1px solid var(--line-strong);
+  border-radius:18px;
+  background:rgba(99,230,186,.055);
+}
+.after-submit-panel h3{
+  margin:0;
+  font-size:22px;
+}
+.channel-actions{
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px;
+}
+.client-email-panel{
+  display:grid;
+  gap:12px;
+  padding:18px;
+  border:1px solid var(--line);
+  border-radius:16px;
+  background:rgba(0,0,0,.12);
+}
+.client-portal-layout{
+  display:grid;
+  gap:24px;
+}
+.client-auth-card{
+  width:min(620px,100%);
+}
+.client-workspace{
+  display:grid;
+  gap:22px;
+}
+body[data-theme="light"] .after-submit-panel{
+  background:rgba(8,124,90,.07);
+}
+body[data-theme="light"] .client-email-panel{
+  background:rgba(255,255,255,.62);
+}
+@media(max-width:620px){
+  .channel-actions{
+    display:grid;
+    grid-template-columns:1fr;
+  }
+  .channel-actions .button{
+    width:100%;
+  }
+  .after-submit-panel{
+    padding:18px;
+  }
+}

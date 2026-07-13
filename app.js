@@ -7,7 +7,7 @@ window.addEventListener('scroll', resetHorizontalScroll, { passive: true });
 window.addEventListener('resize', resetHorizontalScroll);
 window.addEventListener('orientationchange', () => window.setTimeout(resetHorizontalScroll, 120));
 const path = location.pathname.replace(/\/index\.html$/, '/');
-const navKey = path.includes('/services') ? 'services' : path.includes('/projects') ? 'projects' : path.includes('/pricing') ? 'pricing' : path.includes('/about') ? 'about' : path.includes('/reviews') ? 'reviews' : path.includes('/contact') ? 'contact' : 'home';
+const navKey = path.includes('/services') ? 'services' : path.includes('/projects') ? 'projects' : path.includes('/pricing') ? 'pricing' : path.includes('/about') ? 'about' : path.includes('/reviews') ? 'reviews' : path.includes('/contact') ? 'contact' : path.includes('/support') ? 'support' : path.includes('/client') ? 'client' : 'home';
 $$('.desktop-nav,.mobile-panel').forEach(nav => {
   const contactLink = $('[data-nav="contact"]', nav);
   if (contactLink && !$('[data-nav="reviews"]', nav)) {
@@ -21,21 +21,6 @@ $$('.desktop-nav,.mobile-panel').forEach(nav => {
   }
 });
 $$(`[data-nav="${navKey}"]`).forEach(link => link.classList.add('active'));
-if (navKey === 'home') {
-  const homeAnchors = {
-    services: '#services-overview',
-    projects: '#featured-projects',
-    reviews: '#reviews-preview',
-    contact: '#project-request'
-  };
-  Object.entries(homeAnchors).forEach(([key, href]) => {
-    $$(`[data-nav="${key}"]`).forEach(link => { link.href = href; });
-  });
-  $$('.footer a[href="/services/"]').forEach(link => { link.href = '#services-overview'; });
-  $$('.footer a[href="/projects/"]').forEach(link => { link.href = '#featured-projects'; });
-  $$('.footer a[href="/reviews/"]').forEach(link => { link.href = '#reviews-preview'; });
-  $$('.footer a[href="/contact/"]').forEach(link => { link.href = '#project-request'; });
-}
 $$('footer a[href="https://github.com/W1zzY-888"]').forEach(link => {
   link.href = 'https://wa.me/message/ICHYJGLJUYAWI1';
   link.textContent = 'WhatsApp';
@@ -59,7 +44,7 @@ $$('.footer').forEach(footer => {
   const grid = document.createElement('div');
   grid.className = 'footer-grid footer-grid-generated';
   grid.innerHTML = `<div><a class="brand" href="/"><span class="brand-mark">&lt;W1D&gt;</span>W1ZZYDEV</a><p data-ru="Premium digital & software development: сайты, интерфейсы, приложения, автоматизация и развитие проектов." data-en="Premium digital & software development: websites, interfaces, apps, automation and project growth."></p></div>
-    <div><strong data-ru="Навигация" data-en="Navigation"></strong><a href="/services/" data-ru="Услуги" data-en="Services"></a><a href="/projects/" data-ru="Проекты" data-en="Projects"></a><a href="/reviews/" data-ru="Отзывы" data-en="Reviews"></a><a href="/contact/" data-ru="Контакты" data-en="Contact"></a></div>
+    <div><strong data-ru="Навигация" data-en="Navigation"></strong><a href="/services/" data-ru="Услуги" data-en="Services"></a><a href="/projects/" data-ru="Проекты" data-en="Projects"></a><a href="/pricing/" data-ru="Цены" data-en="Pricing"></a><a href="/about/" data-ru="О студии" data-en="About"></a><a href="/reviews/" data-ru="Отзывы" data-en="Reviews"></a><a href="/contact/" data-ru="Контакты" data-en="Contact"></a><a href="/support/" data-ru="Техподдержка" data-en="Support"></a></div>
     <div><strong data-ru="Услуги" data-en="Services"></strong><a href="/services/#web-development">Web Development</a><a href="/services/#software-development">Software Development</a><a href="/services/#ui-ux-digital-design">UI/UX Design</a><a href="/services/#technical-support">Technical Support</a></div>
     <div><strong data-ru="Связь" data-en="Contact"></strong><a href="https://t.me/W1zzY228" target="_blank" rel="noopener noreferrer">Telegram</a><a href="mailto:w1zzydev.studio@gmail.com">Email</a><a href="https://www.instagram.com/w1zzydev?igsh=Nnd5ZWNtMmNqeGI1&utm_source=qr" target="_blank" rel="noopener noreferrer">Instagram</a><a href="https://wa.me/message/ICHYJGLJUYAWI1" target="_blank" rel="noopener noreferrer">WhatsApp</a></div>`;
   container.insertBefore(grid, bottom);
@@ -83,39 +68,8 @@ if (navKey === 'home') {
     banner.innerHTML = '<img src="/assets/w1zzydev-banner.png" alt="W1ZZYDEV">';
     hero.before(banner);
   }
-  const trustSection = $('.why-section') || $$('main > .section.dark-band')[1];
-  if (trustSection && !$('.process-section')) {
-    const processSection = document.createElement('section');
-    processSection.className = 'section process-section';
-    processSection.innerHTML = `<div class="container"><div class="section-head"><div><p class="eyebrow" data-ru="Как мы работаем" data-en="How we work"></p><h2 data-ru="Прозрачный процесс. Предсказуемый результат." data-en="A transparent process. A predictable result."></h2></div><p data-ru="Каждый проект проходит одинаковый путь — от идеи до запуска." data-en="Every project follows the same path — from idea to launch."></p></div><div class="process-grid">
-      <article class="process-card reveal"><span>01</span><h3 data-ru="Исследование" data-en="Research"></h3><p data-ru="Обсуждаем цели бизнеса, аудиторию и задачи." data-en="We discuss business goals, audience and objectives."></p></article>
-      <article class="process-card reveal"><span>02</span><h3 data-ru="Проектирование" data-en="Architecture"></h3><p data-ru="Продумываем структуру и пользовательский путь." data-en="We plan the structure and user journey."></p></article>
-      <article class="process-card reveal"><span>03</span><h3 data-ru="Дизайн" data-en="Design"></h3><p data-ru="Создаём визуальную систему проекта." data-en="We create the project's visual system."></p></article>
-      <article class="process-card reveal"><span>04</span><h3 data-ru="Разработка" data-en="Development"></h3><p data-ru="Собираем продукт на современном стеке." data-en="We build the product with a modern stack."></p></article>
-      <article class="process-card reveal"><span>05</span><h3 data-ru="Тестирование" data-en="Testing"></h3><p data-ru="Проверяем адаптивность и производительность." data-en="We test responsiveness and performance."></p></article>
-      <article class="process-card reveal"><span>06</span><h3 data-ru="Запуск и поддержка" data-en="Launch & support"></h3><p data-ru="Публикуем проект и помогаем после релиза." data-en="We publish the project and support it after release."></p></article>
-    </div></div>`;
-    const founderSection = document.createElement('section');
-    founderSection.className = 'section dark-band founder-section';
-    founderSection.innerHTML = `<div class="container"><div class="section-head"><div><p class="eyebrow" data-ru="Основатель" data-en="Founder"></p><h2 data-ru="Кто стоит за W1ZZYDEV" data-en="Who stands behind W1ZZYDEV"></h2></div></div><article class="founder-card reveal"><div class="founder-avatar"><img src="/assets/favicon.png" alt="Максим П."><span>MP</span></div><div><span class="tag">Founder & Web Developer</span><h3 data-ru="Максим П." data-en="Maxim P."></h3><p data-ru="W1ZZYDEV — независимая веб-студия, которая помогает бизнесу и личным брендам создавать современные сайты, интерфейсы и веб-приложения. Мы делаем акцент на дизайне, удобстве и реальной пользе для клиента." data-en="W1ZZYDEV is an independent web studio helping businesses and personal brands create modern websites, interfaces and web applications. We focus on design, usability and real value for the client."></p></div></article></div>`;
-    trustSection.before(processSection, founderSection);
-    trustSection.innerHTML = `<div class="container"><div class="section-head"><div><p class="eyebrow" data-ru="Почему выбирают W1ZZYDEV" data-en="Why choose W1ZZYDEV"></p><h2 data-ru="Система работы, которой можно доверять." data-en="A workflow you can trust."></h2></div></div><div class="grid-3 trust-cards">
-      <article class="card reason-card"><span class="card-index">01</span><h3 data-ru="Индивидуальный подход" data-en="Individual approach"></h3><p data-ru="Решение строится вокруг бизнеса, аудитории и задачи." data-en="The solution is built around the business, audience and goal."></p></article>
-      <article class="card reason-card"><span class="card-index">02</span><h3 data-ru="Быстрый запуск" data-en="Fast launch"></h3><p data-ru="Понятные этапы и фокус на действительно важном." data-en="Clear stages and focus on what truly matters."></p></article>
-      <article class="card reason-card"><span class="card-index">03</span><h3 data-ru="Современные технологии" data-en="Modern technology"></h3><p data-ru="Надёжный стек без лишней технической сложности." data-en="A reliable stack without unnecessary complexity."></p></article>
-      <article class="card reason-card"><span class="card-index">04</span><h3 data-ru="Адаптивность" data-en="Responsiveness"></h3><p data-ru="Интерфейс продуман для телефона, планшета и компьютера." data-en="The interface is designed for mobile, tablet and desktop."></p></article>
-      <article class="card reason-card"><span class="card-index">05</span><h3 data-ru="Поддержка после запуска" data-en="Post-launch support"></h3><p data-ru="Помогаем развивать продукт и решать новые задачи." data-en="We help evolve the product and solve new challenges."></p></article>
-      <article class="card reason-card"><span class="card-index">06</span><h3 data-ru="SEO-готовность" data-en="SEO-ready"></h3><p data-ru="Закладываем метаданные, структуру и техническую основу." data-en="We include metadata, structure and a technical foundation."></p></article>
-    </div></div>`;
-  }
-  const technologySection = $$('.tech-cloud')[0]?.closest('section');
-  if (technologySection && !$('.reviews-preview')) {
-    const reviewSection = document.createElement('section');
-    reviewSection.className = 'section reviews-preview';
-    reviewSection.innerHTML = `<div class="container"><div class="section-head"><div><p class="eyebrow" data-ru="Отзывы клиентов" data-en="Client reviews"></p><h2 data-ru="Реальные впечатления о совместной работе." data-en="Real experiences from working together."></h2></div><p data-ru="Здесь отображаются только отзывы, оставленные посетителями сайта." data-en="Only reviews submitted by website visitors are shown here."></p></div><div class="reviews-grid" id="home-reviews"></div><div class="card-actions"><a class="button" href="/reviews/" data-ru="Все отзывы и форма →" data-en="All reviews and form →"></a></div></div>`;
-    technologySection.before(reviewSection);
-  }
 }
+
 
 if (navKey === 'services') {
   const lastSection = $$('main > .section').at(-1);
@@ -167,7 +121,7 @@ $$('.service-card').forEach((card, index) => {
   makeCardInteractive(card, `/contact/?service=${serviceSlugs[index] || 'custom'}`, `${$('h3', card)?.textContent || 'Услуга'} — обсудить проект`);
 });
 if (navKey === 'home') {
-  $$('.grid-4 .reason-card').forEach((card, index) => makeCardInteractive(card, `/services/#${['landing','corporate','web-app','ui-ux'][index]}`, `${$('h3', card)?.textContent || 'Услуга'} — открыть услугу`));
+  $$('.grid-4 .reason-card').forEach((card, index) => makeCardInteractive(card, `/services/#${['web-development','software-development','mobile-applications','ui-ux-digital-design'][index]}`, `${$('h3', card)?.textContent || 'Услуга'} — открыть услугу`));
   $$('.process-card').forEach((card, index) => makeCardInteractive(card, `/contact/?step=${index + 1}`, `${$('h3', card)?.textContent || 'Этап'} — обсудить проект`));
   $$('.trust-cards .reason-card').forEach(card => makeCardInteractive(card, '/about/', `${$('h3', card)?.textContent || 'Преимущество'} — о студии`));
 }
@@ -361,33 +315,117 @@ function isRateLimited(key) {
   sessionStorage.setItem(key, String(now));
   return false;
 }
+const discussionText = 'Здравствуйте! Я оставил заявку на сайте W1ZZYDEV и хочу продолжить обсуждение проекта.';
+const supportText = 'Здравствуйте! Я создал обращение в поддержку W1ZZYDEV и хочу продолжить обсуждение.';
+const channelLabels = {
+  site_chat: { ru: 'Чат на сайте', en: 'Website chat' },
+  telegram: { ru: 'Telegram', en: 'Telegram' },
+  whatsapp: { ru: 'WhatsApp', en: 'WhatsApp' },
+  instagram: { ru: 'Instagram', en: 'Instagram' },
+  email: { ru: 'Email', en: 'Email' },
+  undecided: { ru: 'Не определился', en: 'Not sure yet' }
+};
+function channelLabel(value) {
+  return channelLabels[value]?.[lang] || channelLabels[value]?.ru || value || '—';
+}
+function isEmail(value) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value || '').trim());
+}
+function authRedirectUrl(pathname = '/client/') {
+  const origin = location.hostname === 'localhost' || location.hostname === '127.0.0.1'
+    ? location.origin
+    : 'https://w1zzydev.com';
+  return `${origin}${pathname}`;
+}
+function externalChannelUrl(channel, text = discussionText, subject = 'W1ZZYDEV') {
+  const encoded = encodeURIComponent(text);
+  if (channel === 'telegram') return `https://t.me/W1zzY228?text=${encoded}`;
+  if (channel === 'whatsapp') return `https://wa.me/message/ICHYJGLJUYAWI1?text=${encoded}`;
+  if (channel === 'instagram') return 'https://www.instagram.com/w1zzydev?igsh=Nnd5ZWNtMmNqeGI1&utm_source=qr';
+  if (channel === 'email') return `mailto:w1zzydev.studio@gmail.com?subject=${encodeURIComponent(subject)}&body=${encoded}`;
+  return '/client/';
+}
+function updateChannelActionLinks(container, text = discussionText, subject = 'W1ZZYDEV') {
+  if (!container) return;
+  $$('[data-lead-action], [data-support-channel]', container).forEach(element => {
+    const channel = element.dataset.leadAction || element.dataset.supportChannel;
+    if (!channel || channel === 'site_chat') return;
+    element.setAttribute('href', externalChannelUrl(channel, text, subject));
+  });
+}
+function updateContactDetailUI(formElement) {
+  if (!formElement) return;
+  const method = formElement?.elements?.contact_method?.value || 'site_chat';
+  const input = $('[data-contact-detail]', formElement);
+  const label = $('#contact-detail-label', formElement);
+  if (!input || !label) return;
+  const config = {
+    site_chat: ['Email для защищённого диалога', 'Email for secure dialog', 'name@example.com', 'name@example.com'],
+    telegram: ['Telegram username или ссылка', 'Telegram username or link', '@username или https://t.me/username', '@username or https://t.me/username'],
+    whatsapp: ['Номер WhatsApp', 'WhatsApp number', '+7...', '+1...'],
+    instagram: ['Instagram username', 'Instagram username', '@username', '@username'],
+    email: ['Email', 'Email', 'name@example.com', 'name@example.com'],
+    undecided: ['Контакт для ответа', 'Contact for reply', 'Email, телефон или username', 'Email, phone or username']
+  }[method] || [];
+  label.dataset.ru = config[0];
+  label.dataset.en = config[1];
+  label.textContent = lang === 'en' ? config[1] : config[0];
+  input.dataset.placeholderRu = config[2];
+  input.dataset.placeholderEn = config[3];
+  input.placeholder = lang === 'en' ? config[3] : config[2];
+  input.type = method === 'site_chat' || method === 'email' ? 'email' : 'text';
+}
 async function submitLeadToSupabase(payload) {
   const submissionKey = payload.submissionKey || (window.crypto?.randomUUID ? window.crypto.randomUUID() : `${Date.now()}-${Math.random().toString(16).slice(2)}`);
-  const rows = await supabaseRequest('/rest/v1/leads?select=id,conversation_id,created_at', {
+  await supabaseRequest('/rest/v1/leads', {
     method: 'POST',
-    headers: { Prefer: 'return=representation' },
+    headers: { Prefer: 'return=minimal' },
     body: JSON.stringify({
       name: payload.name,
       contact: payload.contact,
+      contact_method: payload.contactMethod || payload.preferredChannel || 'undecided',
+      preferred_channel: payload.preferredChannel || payload.contactMethod || 'undecided',
       project_type: payload.projectType,
       description: payload.description,
       source: payload.source || 'website',
-      submission_key: submissionKey
+      submission_key: submissionKey,
+      locale: lang
     })
   });
-  return Array.isArray(rows) ? rows[0] : null;
+  return { submissionKey };
 }
 
 const form = $('#project-form');
+let lastLeadSubmissionKey = '';
+updateContactDetailUI(form);
+form?.elements?.contact_method?.addEventListener('change', () => {
+  updateContactDetailUI(form);
+  const method = form.elements.contact_method.value;
+  const matchingChannel = form.querySelector(`input[name="channel"][value="${method}"]`);
+  if (matchingChannel) matchingChannel.checked = true;
+});
+form?.addEventListener('change', event => {
+  const channel = event.target.closest('input[name="channel"]');
+  if (!channel || !form.elements.contact_method) return;
+  if (['site_chat', 'telegram', 'whatsapp', 'instagram', 'email'].includes(channel.value)) {
+    form.elements.contact_method.value = channel.value;
+    updateContactDetailUI(form);
+  }
+});
 form?.addEventListener('submit', async event => {
   event.preventDefault();
   if (!form.reportValidity()) return;
   const data = new FormData(form);
   const status = $('#form-status');
   const button = $('button[type="submit"]', form);
+  const nextActions = $('#lead-next-actions');
+  const magicPanel = $('#lead-magic-panel');
+  nextActions?.classList.add('hidden');
+  magicPanel?.classList.add('hidden');
   if (hasSpamSignal(form)) {
     setFormStatus(status, lang === 'ru' ? 'Заявка принята. Если нужно, отправьте сообщение удобным способом связи.' : 'Request accepted. If needed, send the message via your preferred channel.');
     form.reset();
+    updateContactDetailUI(form);
     return;
   }
   if (isRateLimited('w1zzydev-project-form-last')) {
@@ -396,38 +434,66 @@ form?.addEventListener('submit', async event => {
   }
   const name = cleanFormValue(data.get('name'), 80);
   const contact = cleanFormValue(data.get('contact'), 160);
+  const contactMethod = cleanFormValue(data.get('contact_method'), 40) || 'undecided';
   const type = cleanFormValue(data.get('type'), 80);
   const budget = cleanFormValue(data.get('budget'), 80);
   const task = cleanMultilineValue(data.get('message'), 2000);
-  const message = `Новая заявка W1ZZYDEV\n\nИмя: ${name}\nКонтакт: ${contact}\nТип проекта: ${type}\nБюджет: ${budget}\n\nСообщение:\n${task}`;
-  const encoded = encodeURIComponent(message);
-  const channel = data.get('channel');
+  const message = `${discussionText}\n\nИмя: ${name}\nКонтакт: ${contact}\nСпособ связи: ${channelLabel(contactMethod)}\nТип проекта: ${type}\nБюджет: ${budget}\n\nЗадача:\n${task}`;
+  const channel = cleanFormValue(data.get('channel'), 40) || contactMethod;
   if (button) button.disabled = true;
   const submissionKey = window.crypto?.randomUUID ? window.crypto.randomUUID() : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
   try {
-    await submitLeadToSupabase({ name, contact, projectType: type, description: task, source: `contact:${channel || 'unknown'}`, website: cleanFormValue(data.get('website'), 120), submissionKey });
+    const createdLead = await submitLeadToSupabase({ name, contact, contactMethod, preferredChannel: contactMethod, projectType: type, description: task, source: `contact:${contactMethod}`, website: cleanFormValue(data.get('website'), 120), submissionKey });
+    lastLeadSubmissionKey = createdLead.submissionKey || submissionKey;
+    navigator.clipboard?.writeText(discussionText).catch(() => {});
+    updateChannelActionLinks(nextActions, discussionText, `W1ZZYDEV — ${type}`);
+    const email = isEmail(contact) ? contact : '';
+    const magicEmail = $('#lead-magic-email');
+    if (magicEmail) magicEmail.value = email;
     form.reset();
-    setFormStatus(status, lang === 'ru' ? 'Спасибо. Заявка создана, мы свяжемся с вами по указанному способу связи.' : 'Thank you. The request was created; we will contact you through the provided channel.');
-    if (button) button.disabled = false;
-    return;
+    updateContactDetailUI(form);
+    nextActions?.classList.remove('hidden');
+    setFormStatus(status, lang === 'ru' ? 'Заявка принята. Как вам удобнее продолжить общение?' : 'Request accepted. How would you like to continue?');
+    if (channel === 'site_chat') magicPanel?.classList.remove('hidden');
   } catch (error) {
-    setFormStatus(status, lang === 'ru' ? 'Не удалось создать заявку на сервере. Используем выбранный способ связи.' : 'Could not create the server request. Using the selected contact channel.', 'error');
+    setFormStatus(status, (lang === 'ru' ? 'Не удалось сохранить заявку в Supabase: ' : 'Could not save the request in Supabase: ') + String(error.message || error), 'error');
+  } finally {
+    if (button) button.disabled = false;
   }
-  navigator.clipboard?.writeText(message).catch(() => {});
-  setFormStatus(status, lang === 'ru' ? 'Готовим заявку и открываем выбранный способ связи...' : 'Preparing the request and opening your selected channel...');
-  if (channel === 'telegram') {
-    location.assign(`https://t.me/W1zzY228?text=${encoded}`);
-  } else if (channel === 'whatsapp') {
-    location.assign(`https://wa.me/message/ICHYJGLJUYAWI1?text=${encoded}`);
-  } else if (channel === 'instagram') {
-    location.assign('https://www.instagram.com/w1zzydev?igsh=Nnd5ZWNtMmNqeGI1&utm_source=qr');
-  } else {
-    location.href = `mailto:w1zzydev.studio@gmail.com?subject=${encodeURIComponent(`W1ZZYDEV — ${type}`)}&body=${encoded}`;
+});
+
+$('#lead-next-actions')?.addEventListener('click', event => {
+  const siteButton = event.target.closest('[data-lead-action="site_chat"]');
+  if (!siteButton) return;
+  $('#lead-magic-panel')?.classList.remove('hidden');
+  $('#lead-magic-email')?.focus();
+});
+
+$('#lead-send-magic')?.addEventListener('click', async () => {
+  const emailInput = $('#lead-magic-email');
+  const status = $('#form-status');
+  const button = $('#lead-send-magic');
+  const email = cleanFormValue(emailInput?.value, 160);
+  if (!isEmail(email)) {
+    setFormStatus(status, lang === 'ru' ? 'Введите email, чтобы отправить безопасную ссылку для входа.' : 'Enter an email to send the secure sign-in link.', 'error');
+    return;
   }
-  setFormStatus(status, channel === 'email'
-    ? (lang === 'ru' ? 'Письмо подготовлено. Если почта не открылась, выберите Telegram, WhatsApp или Instagram.' : 'Email prepared. If it did not open, choose Telegram, WhatsApp or Instagram.')
-    : (lang === 'ru' ? 'Заявка подготовлена и скопирована. Вставьте её в открывшийся чат и отправьте.' : 'Request prepared and copied. Paste it into the opened chat and send.'));
-  window.setTimeout(() => { if (button) button.disabled = false; }, 1800);
+  button.disabled = true;
+  try {
+    if (lastLeadSubmissionKey) {
+      await supabaseRequest('/rest/v1/rpc/attach_lead_access_email', {
+        method: 'POST',
+        headers: { Prefer: 'return=minimal' },
+        body: JSON.stringify({ p_submission_key: lastLeadSubmissionKey, p_email: email })
+      }).catch(() => null);
+    }
+    await sendClientMagicLink(email, '/client/');
+    setFormStatus(status, lang === 'ru' ? 'Magic link отправлен. Откройте письмо и перейдите по ссылке, чтобы увидеть свой диалог.' : 'Magic link sent. Open the email and follow the link to see your dialog.');
+  } catch (error) {
+    setFormStatus(status, lang === 'ru' ? 'Не удалось отправить magic link. Проверьте настройки Supabase Auth.' : 'Could not send the magic link. Check Supabase Auth settings.', 'error');
+  } finally {
+    button.disabled = false;
+  }
 });
 
 const homeProjectForm = $('#home-project-form');
@@ -499,7 +565,7 @@ function normalizeSupabaseReview(review) {
   };
 }
 
-const featuredReviewFallbacks = [
+const publicReviewFallbacks = [
   {
     id: 'featured-daria-gorodnichaya',
     name: 'Дарья Городничая',
@@ -514,6 +580,27 @@ const featuredReviewFallbacks = [
     moderatedAt: '2026-06-21T00:00:00.000Z'
   }
 ];
+const featuredReviewFallbacks = publicReviewFallbacks;
+
+function normalizeReviewFingerprint(review) {
+  return [
+    review.id && String(review.id).replace(/^featured-/, ''),
+    review.name,
+    review.company,
+    review.rating,
+    review.text
+  ].filter(Boolean).join('|').toLowerCase().replace(/\s+/g, ' ').trim();
+}
+
+function uniqueReviews(reviews) {
+  const seen = new Set();
+  return reviews.filter(review => {
+    const key = normalizeReviewFingerprint(review);
+    if (!key || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
 
 async function supabaseRequest(pathname, options = {}, accessToken = '') {
   const config = await getSupabaseConfig();
@@ -569,6 +656,50 @@ async function requestPasswordResetEmail(email) {
     redirectTo: 'https://w1zzydev.com/reviews/reset-password/'
   });
   if (error) throw error;
+}
+
+async function sendClientMagicLink(email, redirectPath = '/client/') {
+  const client = await getSupabaseBrowserClient();
+  const { error } = await client.auth.signInWithOtp({
+    email,
+    options: {
+      emailRedirectTo: authRedirectUrl(redirectPath),
+      shouldCreateUser: true
+    }
+  });
+  if (error) throw error;
+}
+
+async function getClientSession() {
+  const client = await getSupabaseBrowserClient();
+  const hash = new URLSearchParams(location.hash.slice(1));
+  const query = new URLSearchParams(location.search);
+  const accessToken = hash.get('access_token');
+  const refreshToken = hash.get('refresh_token');
+  const code = query.get('code');
+  if (accessToken && refreshToken) {
+    const { data, error } = await client.auth.setSession({ access_token: accessToken, refresh_token: refreshToken });
+    if (error) throw error;
+    history.replaceState(null, document.title, location.pathname);
+    return data.session;
+  }
+  if (code) {
+    const { data, error } = await client.auth.exchangeCodeForSession(code);
+    if (error) throw error;
+    history.replaceState(null, document.title, location.pathname);
+    return data.session;
+  }
+  const { data, error } = await client.auth.getSession();
+  if (error) throw error;
+  return data.session;
+}
+
+async function claimClientProfile(accessToken) {
+  return supabaseRequest('/rest/v1/rpc/claim_client_profile', {
+    method: 'POST',
+    headers: { Prefer: 'return=representation' },
+    body: JSON.stringify({})
+  }, accessToken);
 }
 
 async function preparePasswordRecoverySession() {
@@ -661,13 +792,13 @@ function openReviewsDatabase() {
 async function getReviews() {
   if (!useLocalReviewDatabase) {
     const rows = await supabaseRequest('/rest/v1/reviews?select=id,name,company,rating,text,status,created_at,moderated_at&status=eq.published&order=created_at.desc');
-    return rows.map(normalizeSupabaseReview);
+    return uniqueReviews(rows.map(normalizeSupabaseReview));
   }
   const database = await openReviewsDatabase();
   return new Promise((resolve, reject) => {
     const transaction = database.transaction('reviews', 'readonly');
     const request = transaction.objectStore('reviews').getAll();
-    request.onsuccess = () => resolve(request.result.filter(review => review.status === 'published' || (review.status == null && review.published === true)).sort((a, b) => b.createdAt.localeCompare(a.createdAt)));
+    request.onsuccess = () => resolve(uniqueReviews(request.result.filter(review => review.status === 'published' || (review.status == null && review.published === true)).sort((a, b) => b.createdAt.localeCompare(a.createdAt))));
     request.onerror = () => reject(request.error);
     transaction.oncomplete = () => database.close();
   });
@@ -793,45 +924,246 @@ function createReviewCard(review) {
   return card;
 }
 
-async function renderReviews(container, limit = Infinity, fallbackReviews = []) {
+function createReviewsNotice(messageRu, messageEn) {
+  const notice = document.createElement('div');
+  notice.className = 'reviews-empty reviews-notice';
+  notice.dataset.ru = messageRu;
+  notice.dataset.en = messageEn;
+  notice.textContent = lang === 'en' ? messageEn : messageRu;
+  return notice;
+}
+
+async function renderReviews(container, limit = Infinity, fallbackReviews = publicReviewFallbacks) {
   if (!container) return;
   try {
     const publishedReviews = await getReviews();
-    const reviews = (publishedReviews.length ? publishedReviews : fallbackReviews).slice(0, limit);
+    const reviews = publishedReviews.slice(0, limit);
     container.dataset.count = String(reviews.length);
-    container.dataset.source = publishedReviews.length ? 'database' : (fallbackReviews.length ? 'fallback' : 'empty');
+    container.dataset.source = publishedReviews.length ? 'database' : 'empty';
     container.replaceChildren();
     if (!reviews.length) {
-      const empty = document.createElement('div');
-      empty.className = 'reviews-empty';
-      empty.dataset.ru = 'Пока нет опубликованных отзывов. Первый отзыв можно оставить прямо на сайте.';
-      empty.dataset.en = 'There are no published reviews yet. The first review can be submitted directly on the website.';
-      empty.textContent = empty.dataset[lang];
-      container.appendChild(empty);
+      container.appendChild(createReviewsNotice('Пока нет опубликованных отзывов.', 'There are no published reviews yet.'));
       return;
     }
     reviews.forEach(review => container.appendChild(createReviewCard(review)));
   } catch (error) {
-    if (fallbackReviews.length) {
-      const reviews = fallbackReviews.slice(0, limit);
+    const fallback = uniqueReviews(fallbackReviews).slice(0, limit);
+    if (fallback.length) {
+      const reviews = fallback;
       container.dataset.count = String(reviews.length);
       container.dataset.source = 'fallback';
       container.replaceChildren(...reviews.map(createReviewCard));
+      container.appendChild(createReviewsNotice('Показан сохранённый опубликованный отзыв. Новые отзывы временно загружаются с задержкой.', 'A saved published review is shown. New reviews may load with a temporary delay.'));
       return;
     }
-    const failed = document.createElement('div');
-    failed.className = 'reviews-empty';
-    failed.textContent = lang === 'ru' ? 'Система отзывов пока не подключена.' : 'The review system is not connected yet.';
     container.dataset.count = '0';
     container.dataset.source = 'error';
-    container.replaceChildren(failed);
+    container.replaceChildren(createReviewsNotice('Пока нет опубликованных отзывов.', 'There are no published reviews yet.'));
   }
 }
 
 const reviewsList = $('#reviews-list');
 const homeReviews = $('#home-reviews');
 renderReviews(reviewsList);
-renderReviews(homeReviews, 6, featuredReviewFallbacks);
+renderReviews(homeReviews, 2);
+
+const clientLoginForm = $('#client-login-form');
+const clientWorkspace = $('#client-workspace');
+const clientState = { token: '', selectedConversationId: null, conversations: [], leads: [], tickets: [], messages: [] };
+
+async function clientRequest(pathname, options = {}) {
+  if (!clientState.token) throw new Error('Client is not authorized');
+  return supabaseRequest(pathname, options, clientState.token);
+}
+
+function clientStatus(message, type = 'success') {
+  setFormStatus($('#client-login-status') || $('#client-message-status'), message, type);
+}
+
+async function loadClientPortal() {
+  const session = await getClientSession();
+  if (!session?.access_token) return;
+  clientState.token = session.access_token;
+  await claimClientProfile(clientState.token).catch(() => null);
+  clientLoginForm?.classList.add('hidden');
+  clientWorkspace?.classList.remove('hidden');
+  await renderClientPortal();
+}
+
+async function renderClientPortal() {
+  const leadsContainer = $('#client-leads');
+  const messagesContainer = $('#client-messages');
+  if (leadsContainer) leadsContainer.innerHTML = adminEmpty(lang === 'ru' ? 'Загрузка заявок...' : 'Loading requests...');
+  if (messagesContainer) messagesContainer.innerHTML = adminEmpty(lang === 'ru' ? 'Выберите диалог.' : 'Choose a dialog.');
+  const [leads, tickets, conversations] = await Promise.all([
+    clientRequest('/rest/v1/leads?select=id,project_type,description,status,conversation_id,contact_method,last_contact_channel,created_at,updated_at&order=created_at.desc'),
+    clientRequest('/rest/v1/support_tickets?select=id,subject,project,priority,description,status,conversation_id,last_contact_channel,created_at,updated_at&order=created_at.desc'),
+    clientRequest('/rest/v1/conversations?select=id,lead_id,support_ticket_id,subject,unread_for_client,created_at,updated_at&order=updated_at.desc')
+  ]);
+  clientState.leads = leads || [];
+  clientState.tickets = tickets || [];
+  clientState.conversations = conversations || [];
+  if (leadsContainer) {
+    const leadCards = clientState.leads.map(lead => {
+      const dialog = clientState.conversations.find(item => item.id === lead.conversation_id);
+      return `<article class="admin-card ${clientState.selectedConversationId === lead.conversation_id ? 'active' : ''}">
+        <div class="admin-card-head"><div><strong>${escapeHtml(lead.project_type)}</strong><small>${new Date(lead.created_at).toLocaleString(lang === 'ru' ? 'ru-RU' : 'en-US')}</small></div><span class="moderation-badge">${leadStatusLabels[lead.status] || escapeHtml(lead.status)}</span></div>
+        <p>${escapeHtml(lead.description)}</p>
+        <dl><dt>${lang === 'ru' ? 'Канал' : 'Channel'}</dt><dd>${channelLabel(lead.contact_method || lead.last_contact_channel)}</dd><dt>${lang === 'ru' ? 'Последний ответ' : 'Last reply'}</dt><dd>${dialog?.updated_at ? new Date(dialog.updated_at).toLocaleString(lang === 'ru' ? 'ru-RU' : 'en-US') : '—'}</dd></dl>
+        ${lead.conversation_id ? `<div class="admin-actions"><button class="button small" type="button" data-client-dialog="${lead.conversation_id}">${lang === 'ru' ? 'Открыть диалог' : 'Open dialog'}</button></div>` : ''}
+      </article>`;
+    });
+    const ticketCards = clientState.tickets.map(ticket => {
+      const dialog = clientState.conversations.find(item => item.id === ticket.conversation_id);
+      return `<article class="admin-card ${clientState.selectedConversationId === ticket.conversation_id ? 'active' : ''}">
+        <div class="admin-card-head"><div><strong>${escapeHtml(ticket.subject)}</strong><small>${escapeHtml(ticket.project || (lang === 'ru' ? 'Техподдержка' : 'Support'))}</small></div><span class="moderation-badge">${ticketStatusLabels[ticket.status] || escapeHtml(ticket.status)}</span></div>
+        <p>${escapeHtml(ticket.description)}</p>
+        <dl><dt>${lang === 'ru' ? 'Приоритет' : 'Priority'}</dt><dd>${escapeHtml(ticket.priority)}</dd><dt>${lang === 'ru' ? 'Последний ответ' : 'Last reply'}</dt><dd>${dialog?.updated_at ? new Date(dialog.updated_at).toLocaleString(lang === 'ru' ? 'ru-RU' : 'en-US') : '—'}</dd></dl>
+        ${ticket.conversation_id ? `<div class="admin-actions"><button class="button small" type="button" data-client-dialog="${ticket.conversation_id}">${lang === 'ru' ? 'Открыть переписку' : 'Open thread'}</button></div>` : ''}
+      </article>`;
+    });
+    leadsContainer.innerHTML = [...leadCards, ...ticketCards].join('') || adminEmpty(lang === 'ru' ? 'Заявок и обращений пока нет. Если вы оставили заявку другим способом, войдите с тем же email.' : 'No requests or tickets yet. If you submitted through another channel, sign in with the same email.');
+  }
+}
+
+async function loadClientMessages(conversationId) {
+  clientState.selectedConversationId = conversationId;
+  const title = $('#client-dialog-title');
+  const messagesContainer = $('#client-messages');
+  if (title) title.textContent = `${lang === 'ru' ? 'Диалог' : 'Dialog'} ${conversationId.slice(0, 8)}`;
+  if (messagesContainer) messagesContainer.innerHTML = adminEmpty(lang === 'ru' ? 'Загрузка сообщений...' : 'Loading messages...');
+  const messages = await clientRequest(`/rest/v1/messages?select=id,sender,body,created_at&conversation_id=eq.${encodeURIComponent(conversationId)}&order=created_at.asc`);
+  clientState.messages = messages || [];
+  if (messagesContainer) {
+    messagesContainer.innerHTML = clientState.messages.map(message => `
+      <article class="message-bubble ${message.sender === 'owner' ? 'owner' : 'client'}">
+        <strong>${message.sender === 'owner' ? 'W1ZZYDEV' : (lang === 'ru' ? 'Вы' : 'You')}</strong>
+        <p>${escapeHtml(message.body)}</p>
+        <small>${new Date(message.created_at).toLocaleString(lang === 'ru' ? 'ru-RU' : 'en-US')}</small>
+      </article>
+    `).join('') || adminEmpty(lang === 'ru' ? 'Сообщений пока нет.' : 'There are no messages yet.');
+  }
+}
+
+clientLoginForm?.addEventListener('submit', async event => {
+  event.preventDefault();
+  const email = cleanFormValue(new FormData(clientLoginForm).get('email'), 160);
+  const button = $('button[type="submit"]', clientLoginForm);
+  if (!isEmail(email)) {
+    setFormStatus($('#client-login-status'), lang === 'ru' ? 'Введите корректный email.' : 'Enter a valid email.', 'error');
+    return;
+  }
+  button.disabled = true;
+  try {
+    await sendClientMagicLink(email, '/client/');
+    setFormStatus($('#client-login-status'), lang === 'ru' ? 'Magic link отправлен. Откройте письмо и вернитесь по ссылке.' : 'Magic link sent. Open the email and return through the link.');
+  } catch (error) {
+    setFormStatus($('#client-login-status'), lang === 'ru' ? 'Не удалось отправить magic link. Проверьте Supabase Auth settings.' : 'Could not send the magic link. Check Supabase Auth settings.', 'error');
+  } finally {
+    button.disabled = false;
+  }
+});
+
+$('#client-leads')?.addEventListener('click', event => {
+  const button = event.target.closest('[data-client-dialog]');
+  if (button) loadClientMessages(button.dataset.clientDialog).catch(() => setFormStatus($('#client-message-status'), lang === 'ru' ? 'Не удалось открыть диалог.' : 'Could not open the dialog.', 'error'));
+});
+
+$('#client-message-form')?.addEventListener('submit', async event => {
+  event.preventDefault();
+  if (!clientState.selectedConversationId) {
+    setFormStatus($('#client-message-status'), lang === 'ru' ? 'Сначала выберите диалог.' : 'Choose a dialog first.', 'error');
+    return;
+  }
+  const body = cleanMultilineValue(new FormData(event.currentTarget).get('message'), 2000);
+  const button = $('button[type="submit"]', event.currentTarget);
+  if (!body) return;
+  button.disabled = true;
+  try {
+    await clientRequest('/rest/v1/messages', {
+      method: 'POST',
+      headers: { Prefer: 'return=minimal' },
+      body: JSON.stringify({ conversation_id: clientState.selectedConversationId, body })
+    });
+    event.currentTarget.reset();
+    await loadClientMessages(clientState.selectedConversationId);
+    setFormStatus($('#client-message-status'), lang === 'ru' ? 'Сообщение отправлено.' : 'Message sent.');
+  } catch (error) {
+    setFormStatus($('#client-message-status'), lang === 'ru' ? 'Не удалось отправить сообщение. Доступ проверяется RLS.' : 'Could not send the message. Access is checked by RLS.', 'error');
+  } finally {
+    button.disabled = false;
+  }
+});
+
+$('#client-logout')?.addEventListener('click', async () => {
+  const client = await getSupabaseBrowserClient();
+  await client.auth.signOut().catch(() => {});
+  location.reload();
+});
+
+if (clientLoginForm) loadClientPortal().catch(() => setFormStatus($('#client-login-status'), lang === 'ru' ? 'Сессия не найдена. Войдите по magic link.' : 'No session found. Sign in with a magic link.', 'error'));
+
+const supportTicketForm = $('#support-ticket-form');
+let lastSupportEmail = '';
+supportTicketForm?.addEventListener('submit', async event => {
+  event.preventDefault();
+  if (!supportTicketForm.reportValidity()) return;
+  const data = new FormData(supportTicketForm);
+  const status = $('#support-status');
+  const button = $('button[type="submit"]', supportTicketForm);
+  if (hasSpamSignal(supportTicketForm)) {
+    setFormStatus(status, lang === 'ru' ? 'Тикет принят.' : 'Ticket accepted.');
+    supportTicketForm.reset();
+    return;
+  }
+  const payload = {
+    p_name: cleanFormValue(data.get('name'), 80),
+    p_email: cleanFormValue(data.get('email'), 160),
+    p_project: cleanFormValue(data.get('project'), 120),
+    p_subject: cleanFormValue(data.get('subject'), 160),
+    p_priority: cleanFormValue(data.get('priority'), 20),
+    p_description: cleanMultilineValue(data.get('description'), 2000)
+  };
+  if (!isEmail(payload.p_email)) {
+    setFormStatus(status, lang === 'ru' ? 'Введите email для защищённого доступа к тикету.' : 'Enter an email for secure ticket access.', 'error');
+    return;
+  }
+  button.disabled = true;
+  try {
+    await supabaseRequest('/rest/v1/rpc/create_support_ticket', {
+      method: 'POST',
+      headers: { Prefer: 'return=representation' },
+      body: JSON.stringify(payload)
+    });
+    lastSupportEmail = payload.p_email;
+    updateChannelActionLinks($('#support-next-actions'), supportText, 'W1ZZYDEV — support');
+    $('#support-next-actions')?.classList.remove('hidden');
+    supportTicketForm.reset();
+    setFormStatus(status, lang === 'ru' ? 'Тикет создан. Можно продолжить на сайте или во внешнем канале.' : 'Ticket created. You can continue on the website or through an external channel.');
+  } catch (error) {
+    setFormStatus(status, (lang === 'ru' ? 'Не удалось создать тикет: ' : 'Could not create ticket: ') + String(error.message || error), 'error');
+  } finally {
+    button.disabled = false;
+  }
+});
+
+$('#support-send-magic')?.addEventListener('click', async event => {
+  const button = event.currentTarget;
+  const status = $('#support-status');
+  if (!isEmail(lastSupportEmail)) {
+    setFormStatus(status, lang === 'ru' ? 'Создайте тикет с email, чтобы отправить magic link.' : 'Create a ticket with an email to send a magic link.', 'error');
+    return;
+  }
+  button.disabled = true;
+  try {
+    await sendClientMagicLink(lastSupportEmail, '/client/');
+    setFormStatus(status, lang === 'ru' ? 'Magic link отправлен. После входа тикет будет доступен в клиентском диалоге.' : 'Magic link sent. After sign-in, the ticket will be available in the client dialog.');
+  } catch (error) {
+    setFormStatus(status, lang === 'ru' ? 'Не удалось отправить magic link.' : 'Could not send the magic link.', 'error');
+  } finally {
+    button.disabled = false;
+  }
+});
 
 const reviewForm = $('#review-form');
 reviewForm?.addEventListener('submit', async event => {
@@ -959,10 +1291,10 @@ async function renderModeration() {
   try {
     const [reviews, leads, conversations, tickets, clients, activity] = await Promise.all([
       getAllReviews(),
-      supabaseAdmin('/rest/v1/leads?select=id,name,contact,project_type,description,source,status,conversation_id,client_id,created_at,updated_at&order=created_at.desc'),
+      supabaseAdmin('/rest/v1/leads?select=id,name,contact,contact_method,preferred_channel,last_contact_channel,project_type,description,source,status,conversation_id,client_id,created_at,updated_at&order=created_at.desc'),
       supabaseAdmin('/rest/v1/conversations?select=id,client_id,lead_id,support_ticket_id,subject,unread_for_owner,created_at,updated_at&order=updated_at.desc'),
-      supabaseAdmin('/rest/v1/support_tickets?select=id,client_id,conversation_id,subject,project,priority,description,status,created_at,updated_at&order=created_at.desc'),
-      supabaseAdmin('/rest/v1/clients?select=id,name,contact,email,created_at,updated_at&order=created_at.desc'),
+      supabaseAdmin('/rest/v1/support_tickets?select=id,client_id,conversation_id,subject,project,priority,description,status,contact_method,last_contact_channel,created_at,updated_at&order=created_at.desc'),
+      supabaseAdmin('/rest/v1/clients?select=id,name,contact,email,preferred_channel,last_contact_channel,created_at,updated_at&order=created_at.desc'),
       supabaseAdmin('/rest/v1/admin_activity?select=id,action,entity_type,entity_id,created_at&order=created_at.desc&limit=20').catch(() => [])
     ]);
     adminState.reviews = reviews;
@@ -1053,8 +1385,8 @@ function renderAdminLeads() {
     <article class="admin-card">
       <div class="admin-card-head"><div><strong>${escapeHtml(lead.name)}</strong><small>${escapeHtml(lead.contact)}</small></div><span class="moderation-badge">${leadStatusLabels[lead.status] || escapeHtml(lead.status)}</span></div>
       <p>${escapeHtml(lead.description)}</p>
-      <dl><dt>Тип проекта</dt><dd>${escapeHtml(lead.project_type)}</dd><dt>Источник</dt><dd>${escapeHtml(lead.source)}</dd><dt>Дата</dt><dd>${new Date(lead.created_at).toLocaleString('ru-RU')}</dd><dt>Диалог</dt><dd>${lead.conversation_id ? escapeHtml(lead.conversation_id) : 'создаётся триггером'}</dd></dl>
-      <div class="admin-actions"><select data-lead-status="${lead.id}">${Object.entries(leadStatusLabels).map(([value,label]) => `<option value="${value}" ${lead.status === value ? 'selected' : ''}>${label}</option>`).join('')}</select></div>
+      <dl><dt>Тип проекта</dt><dd>${escapeHtml(lead.project_type)}</dd><dt>Выбранный канал</dt><dd>${escapeHtml(channelLabel(lead.contact_method || lead.preferred_channel))}</dd><dt>Указанный контакт</dt><dd>${escapeHtml(lead.contact)}</dd><dt>Диалог на сайте</dt><dd>${lead.conversation_id ? 'активен' : 'нет'}</dd><dt>Последний канал</dt><dd>${escapeHtml(channelLabel(lead.last_contact_channel || lead.contact_method))}</dd><dt>Источник</dt><dd>${escapeHtml(lead.source)}</dd><dt>Дата</dt><dd>${new Date(lead.created_at).toLocaleString('ru-RU')}</dd></dl>
+      <div class="admin-actions"><select data-lead-status="${lead.id}">${Object.entries(leadStatusLabels).map(([value,label]) => `<option value="${value}" ${lead.status === value ? 'selected' : ''}>${label}</option>`).join('')}</select><select data-lead-channel="${lead.id}">${Object.keys(channelLabels).map(value => `<option value="${value}" ${(lead.last_contact_channel || lead.contact_method) === value ? 'selected' : ''}>${escapeHtml(channelLabel(value))}</option>`).join('')}</select></div>
     </article>
   `).join('') || adminEmpty(adminText('Заявок пока нет.', 'There are no requests yet.'));
 }
@@ -1102,7 +1434,7 @@ function renderAdminTickets() {
     return `<article class="admin-card">
       <div class="admin-card-head"><div><strong>${escapeHtml(ticket.subject)}</strong><small>${escapeHtml(client?.name || 'Клиент')}</small></div><span class="moderation-badge">${ticketStatusLabels[ticket.status] || escapeHtml(ticket.status)}</span></div>
       <p>${escapeHtml(ticket.description)}</p>
-      <dl><dt>Проект</dt><dd>${escapeHtml(ticket.project || 'не указан')}</dd><dt>Приоритет</dt><dd>${escapeHtml(ticket.priority)}</dd><dt>Дата</dt><dd>${new Date(ticket.created_at).toLocaleString('ru-RU')}</dd></dl>
+      <dl><dt>Проект</dt><dd>${escapeHtml(ticket.project || 'не указан')}</dd><dt>Приоритет</dt><dd>${escapeHtml(ticket.priority)}</dd><dt>Канал</dt><dd>${escapeHtml(channelLabel(ticket.contact_method || ticket.last_contact_channel || 'site_chat'))}</dd><dt>Дата</dt><dd>${new Date(ticket.created_at).toLocaleString('ru-RU')}</dd></dl>
       <div class="admin-actions"><select data-ticket-status="${ticket.id}">${Object.entries(ticketStatusLabels).map(([value,label]) => `<option value="${value}" ${ticket.status === value ? 'selected' : ''}>${label}</option>`).join('')}</select></div>
     </article>`;
   }).join('') || adminEmpty(adminText('Тикетов пока нет.', 'There are no tickets yet.'));
@@ -1117,7 +1449,7 @@ function renderAdminClients() {
     const dialogs = adminState.conversations.filter(item => item.client_id === client.id);
     return `<article class="admin-card">
       <div class="admin-card-head"><div><strong>${escapeHtml(client.name)}</strong><small>${escapeHtml(client.contact || client.email || 'контакт не указан')}</small></div></div>
-      <dl><dt>Заявки</dt><dd>${leads.length}</dd><dt>Проекты</dt><dd>${leads.map(item => escapeHtml(item.project_type)).join(', ') || 'нет'}</dd><dt>Обращения</dt><dd>${tickets.length}</dd><dt>История переписки</dt><dd>${dialogs.length} диалогов</dd></dl>
+      <dl><dt>Заявки</dt><dd>${leads.length}</dd><dt>Выбранный канал</dt><dd>${escapeHtml(channelLabel(client.preferred_channel || leads[0]?.contact_method))}</dd><dt>Указанный контакт</dt><dd>${escapeHtml(client.contact || client.email || 'нет')}</dd><dt>Диалог на сайте</dt><dd>${dialogs.length ? 'есть' : 'нет'}</dd><dt>Последний канал</dt><dd>${escapeHtml(channelLabel(client.last_contact_channel || leads[0]?.last_contact_channel))}</dd><dt>Проекты</dt><dd>${leads.map(item => escapeHtml(item.project_type)).join(', ') || 'нет'}</dd><dt>Обращения</dt><dd>${tickets.length}</dd><dt>История переписки</dt><dd>${dialogs.length} диалогов</dd></dl>
     </article>`;
   }).join('') || adminEmpty(adminText('Клиентов пока нет.', 'There are no clients yet.'));
 }
@@ -1222,7 +1554,24 @@ $('#lead-status-filter')?.addEventListener('change', renderAdminLeads);
 
 $('#admin-leads')?.addEventListener('change', async event => {
   const select = event.target.closest('select[data-lead-status]');
-  if (!select) return;
+  const channelSelect = event.target.closest('select[data-lead-channel]');
+  if (!select && !channelSelect) return;
+  if (channelSelect) {
+    channelSelect.disabled = true;
+    try {
+      await supabaseAdmin(`/rest/v1/leads?id=eq.${encodeURIComponent(channelSelect.dataset.leadChannel)}`, {
+        method: 'PATCH',
+        headers: { Prefer: 'return=minimal' },
+        body: JSON.stringify({ last_contact_channel: channelSelect.value, preferred_channel: channelSelect.value, updated_at: new Date().toISOString() })
+      });
+      await renderModeration();
+      setAdminMessage(adminText('Канал заявки обновлён.', 'Request channel updated.'));
+    } catch (error) {
+      setAdminMessage(describeSupabaseError(error), 'error');
+      channelSelect.disabled = false;
+    }
+    return;
+  }
   select.disabled = true;
   try {
     await supabaseAdmin(`/rest/v1/leads?id=eq.${encodeURIComponent(select.dataset.leadStatus)}`, {

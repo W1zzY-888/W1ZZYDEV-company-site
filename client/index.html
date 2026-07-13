@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Клиентский диалог — W1ZZYDEV</title>
+  <meta name="description" content="Защищённый клиентский диалог W1ZZYDEV через Supabase Auth magic link.">
+  <meta name="robots" content="noindex,nofollow">
+  <link rel="icon" href="/favicon.ico" sizes="any">
+  <link rel="stylesheet" href="/styles.css?v=b6e2a98">
+</head>
+<body data-title-ru="Клиентский диалог — W1ZZYDEV" data-title-en="Client Dialog — W1ZZYDEV" data-description-ru="Защищённый клиентский диалог W1ZZYDEV через Supabase Auth magic link." data-description-en="Secure W1ZZYDEV client dialog via Supabase Auth magic link.">
+<div class="site">
+  <header class="header"><div class="container header-inner">
+    <a class="brand" href="/"><span class="brand-mark">&lt;W1D&gt;</span>W1ZZYDEV</a>
+    <nav class="desktop-nav"><a class="nav-link" href="/" data-ru="На сайт" data-en="Back to site">На сайт</a><a class="nav-link" href="/contact/" data-ru="Контакты" data-en="Contact">Контакты</a><a class="nav-link" href="/support/" data-ru="Техподдержка" data-en="Support">Техподдержка</a></nav>
+    <div class="header-tools"><button class="lang" type="button">EN</button><button class="menu-toggle" type="button" aria-label="Открыть меню"><i></i></button></div>
+  </div></header>
+  <nav class="mobile-panel"><a class="nav-link" href="/" data-ru="На сайт" data-en="Back to site">На сайт</a><a class="nav-link" href="/contact/" data-ru="Контакты" data-en="Contact">Контакты</a><a class="nav-link" href="/support/" data-ru="Техподдержка" data-en="Support">Техподдержка</a></nav>
+  <main>
+    <section class="page-hero"><div class="container">
+      <div class="breadcrumbs"><a href="/">W1ZZYDEV</a> / CLIENT</div>
+      <p class="eyebrow" data-ru="Клиентский кабинет" data-en="Client portal">Клиентский кабинет</p>
+      <h1 data-ru="Ваш защищённый диалог с W1ZZYDEV." data-en="Your secure dialog with W1ZZYDEV.">Ваш защищённый диалог с W1ZZYDEV.</h1>
+      <p class="lead" data-ru="Вход выполняется по email magic link. После входа отображаются только ваши заявки, диалоги и сообщения." data-en="Sign-in uses an email magic link. After sign-in, only your requests, dialogs and messages are shown.">Вход выполняется по email magic link. После входа отображаются только ваши заявки, диалоги и сообщения.</p>
+    </div></section>
+    <section class="section"><div class="container client-portal-layout">
+      <form class="form client-auth-card" id="client-login-form">
+        <p class="eyebrow" data-ru="Безопасный вход" data-en="Secure sign-in">Безопасный вход</p>
+        <h2 data-ru="Получите ссылку на email." data-en="Get a link by email.">Получите ссылку на email.</h2>
+        <div class="field"><label>Email</label><input type="email" name="email" autocomplete="email" required data-placeholder-ru="Email из заявки" data-placeholder-en="Email from your request"></div>
+        <button class="button primary" type="submit" data-ru="Отправить magic link" data-en="Send magic link">Отправить magic link</button>
+        <p class="form-status" id="client-login-status" role="status" aria-live="polite"></p>
+      </form>
+
+      <div class="client-workspace hidden" id="client-workspace">
+        <div class="admin-section-head"><div><p class="eyebrow" data-ru="Диалоги" data-en="Dialogs">Диалоги</p><h2 data-ru="Заявки и переписка" data-en="Requests and messages">Заявки и переписка</h2></div><button class="button" type="button" id="client-logout" data-ru="Выйти" data-en="Sign out">Выйти</button></div>
+        <div class="admin-split">
+          <div>
+            <h3 data-ru="Ваши заявки и обращения" data-en="Your requests and tickets">Ваши заявки и обращения</h3>
+            <div class="admin-list" id="client-leads"></div>
+          </div>
+          <div class="dialog-panel">
+            <h3 id="client-dialog-title" data-ru="Выберите диалог" data-en="Choose a dialog">Выберите диалог</h3>
+            <div class="dialog-messages" id="client-messages"></div>
+            <form class="dialog-reply" id="client-message-form"><textarea name="message" maxlength="2000" required data-placeholder-ru="Сообщение для W1ZZYDEV" data-placeholder-en="Message to W1ZZYDEV"></textarea><button class="button primary" type="submit" data-ru="Отправить" data-en="Send">Отправить</button></form>
+            <p class="form-status" id="client-message-status" role="status" aria-live="polite"></p>
+          </div>
+        </div>
+      </div>
+    </div></section>
+  </main>
+  <footer class="footer"><div class="container"><div class="footer-bottom"><span>© 2026 W1ZZYDEV</span><span data-ru="Клиентский доступ" data-en="Client access">Клиентский доступ</span></div></div></footer>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/app.js?v=b6e2a98"></script>
+</body>
+</html>
