@@ -315,6 +315,16 @@ function isRateLimited(key) {
   sessionStorage.setItem(key, String(now));
   return false;
 }
+function isSoftSpamLimited(key, limit = 8, windowMs = 10000) {
+  const now = Date.now();
+  const items = JSON.parse(sessionStorage.getItem(key) || '[]')
+    .map(Number)
+    .filter(value => Number.isFinite(value) && now - value < windowMs);
+  if (items.length >= limit) return true;
+  items.push(now);
+  sessionStorage.setItem(key, JSON.stringify(items));
+  return false;
+}
 function base64Url(bytes) {
   const binary = Array.from(bytes, byte => String.fromCharCode(byte)).join('');
   return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
@@ -1033,8 +1043,9 @@ async function startUniversalChat(payload) {
   universalChatState.tokenHash = tokenHash;
   universalChatState.conversationId = data?.conversation_id || '';
   saveChatSession({ token, tokenHash, conversationId: universalChatState.conversationId, expiresAt: data?.expires_at || '' });
-  await loadUniversalChatMessages();
-  requestAiAssistant(cleanMultilineValue(payload.message, 2000), clientMessageId).catch(() => {});
+  const messages = await loadUniversalChatMessages();
+  const sourceMessage = messages.find(message => message.client_message_id === clientMessageId);
+  requestAiAssistant({ messageId: sourceMessage?.id || '', clientMessageId }).catch(() => {});
   startUniversalChatPolling();
   return data;
 }
@@ -1089,8 +1100,8 @@ async function loadUniversalChatMessages() {
   return messages;
 }
 async function sendUniversalChatMessage(formElement) {
-  if (isRateLimited('w1zzydev-chat-message-last')) {
-    showChatToast(lang === 'ru' ? 'Подождите немного перед следующим сообщением.' : 'Please wait before sending another message.', 'error', 5000);
+  if (isSoftSpamLimited('w1zzydev-chat-message-burst')) {
+    showChatToast(lang === 'ru' ? 'Слишком много сообщений подряд. Подождите несколько секунд.' : 'Too many messages in a row. Please wait a few seconds.', 'error', 4000);
     return;
   }
   const body = cleanMultilineValue(new FormData(formElement).get('message'), 2000);
@@ -1109,11 +1120,25 @@ async function sendUniversalChatMessage(formElement) {
       headers: { Prefer: 'return=representation' },
       body: JSON.stringify({ p_guest_token_hash: universalChatState.tokenHash, p_body: body, p_client_message_id: clientMessageId })
     });
-    (Array.isArray(result) ? result : [result]).filter(Boolean).forEach(message => upsertMessage(message));
+    const savedMessages = (Array.isArray(result) ? result : [result]).filter(Boolean);
+    savedMessages.forEach(message => upsertMessage(message));
+    if (!savedMessages.some(message => message.client_message_id === clientMessageId)) {
+      upsertMessage({ ...optimistic, delivery_status: 'sent', pending: false, failed: false });
+    }
     formElement.reset();
     if (textarea) textarea.dataset.failedText = '';
     renderUniversalChatMessages();
-    requestAiAssistant(body, clientMessageId).catch(() => {});
+    const sourceMessage = savedMessages.find(message => message.client_message_id === clientMessageId);
+    requestAiAssistant({ messageId: sourceMessage?.id || '', clientMessageId }).catch(error => {
+      console.error('[W1ZZYDEV CHAT]', {
+        operation: 'chat.background.notify',
+        code: error?.code || '',
+        message: error?.message || String(error),
+        details: error?.details || '',
+        hint: error?.hint || '',
+        conversationId: universalChatState.conversationId || ''
+      });
+    });
     showChatToast(lang === 'ru' ? 'Сообщение отправлено' : 'Message sent', 'success', 2600);
   } catch (error) {
     upsertMessage({ ...optimistic, pending: false, failed: true });
@@ -1168,8 +1193,8 @@ async function sendAssistantQuickReply(action) {
   renderUniversalChatMessages();
 }
 
-async function requestAiAssistant(message, clientMessageId = '') {
-  if (!message || !universalChatState.conversationId || !universalChatState.token) return null;
+async function requestAiAssistant({ messageId = '', clientMessageId = '' } = {}) {
+  if ((!messageId && !clientMessageId) || !universalChatState.conversationId || !universalChatState.token) return null;
   const config = await getSupabaseConfig();
   const response = await fetch(`${config.url}/functions/v1/chat-assistant`, {
     method: 'POST',
@@ -1181,7 +1206,7 @@ async function requestAiAssistant(message, clientMessageId = '') {
     body: JSON.stringify({
       conversation_id: universalChatState.conversationId,
       guest_token: universalChatState.token,
-      message,
+      message_id: messageId,
       client_message_id: clientMessageId,
       locale: lang
     })
@@ -1198,12 +1223,14 @@ async function requestAiAssistant(message, clientMessageId = '') {
     });
     return null;
   }
-  if (data?.message) {
-    upsertMessage(data.message);
+  const aiMessage = data?.message || data?.ai?.message;
+  if (aiMessage) {
+    upsertMessage(aiMessage);
     renderUniversalChatMessages();
   }
-  if (data?.conversation) {
-    universalChatState.conversationStatus = data.conversation.status || universalChatState.conversationStatus;
+  if (data?.conversation || data?.ai?.conversation) {
+    const conversation = data.conversation || data.ai.conversation;
+    universalChatState.conversationStatus = conversation.status || universalChatState.conversationStatus;
   }
   return data;
 }
@@ -1906,10 +1933,15 @@ const adminChatState = {
   messagesByConversation: new Map(),
   activeConversationId: null,
   realtimeChannel: null,
+  globalRealtimeChannel: null,
+  notificationPollingTimer: null,
   pollingTimer: null,
   pollingErrors: 0,
   sending: false,
   sendingMessageIds: new Set(),
+  knownClientMessageIds: new Set(),
+  notificationSoundReady: false,
+  notificationAudioContext: null,
   lastSyncAt: '',
   lastMessageId: '',
   syncMode: 'connecting',
@@ -2066,18 +2098,78 @@ function adminConversationList() {
 function setAdminConversations(conversations) {
   adminChatState.conversations = new Map((conversations || []).filter(item => item?.id).map(item => [item.id, item]));
   adminState.conversations = adminConversationList();
+  renderAdminUnreadBadge();
   return adminState.conversations;
+}
+
+function adminUnreadTotal() {
+  return adminConversationList().reduce((sum, item) => sum + Number(item.unread_for_owner || 0), 0);
+}
+
+function renderAdminUnreadBadge() {
+  const total = adminUnreadTotal();
+  $$('[data-admin-unread-badge]').forEach(node => {
+    node.textContent = total > 99 ? '99+' : String(total);
+    node.classList.toggle('hidden', total <= 0);
+    node.setAttribute('aria-label', `${total} unread client messages`);
+  });
+}
+
+function ensureAdminNotificationSound() {
+  if (adminChatState.notificationAudioContext) return adminChatState.notificationAudioContext;
+  const AudioContext = window.AudioContext || window.webkitAudioContext;
+  if (!AudioContext) return null;
+  adminChatState.notificationAudioContext = new AudioContext();
+  return adminChatState.notificationAudioContext;
+}
+
+function playAdminNotificationSound() {
+  try {
+    const context = ensureAdminNotificationSound();
+    if (!context) return;
+    if (context.state === 'suspended') context.resume().catch(() => {});
+    const oscillator = context.createOscillator();
+    const gain = context.createGain();
+    oscillator.type = 'sine';
+    oscillator.frequency.setValueAtTime(740, context.currentTime);
+    oscillator.frequency.exponentialRampToValueAtTime(520, context.currentTime + 0.12);
+    gain.gain.setValueAtTime(0.0001, context.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.055, context.currentTime + 0.015);
+    gain.gain.exponentialRampToValueAtTime(0.0001, context.currentTime + 0.18);
+    oscillator.connect(gain).connect(context.destination);
+    oscillator.start();
+    oscillator.stop(context.currentTime + 0.2);
+  } catch (error) {
+    console.error('[W1ZZYDEV CHAT]', {
+      operation: 'admin.notification.sound',
+      message: error?.message || String(error)
+    });
+  }
+}
+
+function observeAdminClientMessages(messages, { silent = false } = {}) {
+  let newClientMessages = 0;
+  (messages || []).forEach(message => {
+    if (message?.sender !== 'client') return;
+    const key = message.id || message.client_message_id;
+    if (!key || adminChatState.knownClientMessageIds.has(key)) return;
+    adminChatState.knownClientMessageIds.add(key);
+    newClientMessages += 1;
+  });
+  if (newClientMessages && !silent) playAdminNotificationSound();
+  return newClientMessages;
 }
 
 function activeAdminMessages() {
   return adminChatState.messagesByConversation.get(adminChatState.activeConversationId) || [];
 }
 
-function setAdminMessages(conversationId, messages) {
+function setAdminMessages(conversationId, messages, { silent = false } = {}) {
   const current = adminChatState.messagesByConversation.get(conversationId) || [];
   const localUnsent = current.filter(isLocalUnsentMessage);
   const normalized = mergeChatMessages(localUnsent, messages || []);
   adminChatState.messagesByConversation.set(conversationId, normalized);
+  observeAdminClientMessages(normalized, { silent });
   if (conversationId === adminChatState.activeConversationId) {
     const last = normalized.at(-1);
     adminChatState.lastSyncAt = last?.created_at || '';
@@ -2091,6 +2183,7 @@ function adminUpsertConversation(conversation) {
   const current = adminChatState.conversations instanceof Map ? adminChatState.conversations.get(conversation.id) : null;
   adminChatState.conversations.set(conversation.id, { ...(current || {}), ...conversation });
   adminState.conversations = adminConversationList().sort((a, b) => new Date(b.updated_at || b.last_message_at || b.created_at || 0) - new Date(a.updated_at || a.last_message_at || a.created_at || 0));
+  renderAdminUnreadBadge();
 }
 
 function adminUpsertMessage(message) {
@@ -2109,6 +2202,7 @@ function adminUpsertMessage(message) {
   if (message.conversation_id) {
     adminState.messages = mergeChatMessages(adminState.messages || [], [message]);
   }
+  observeAdminClientMessages([message]);
   return { messages: nextMessages, changed: previousSignature !== nextSignature };
 }
 
@@ -2158,10 +2252,13 @@ function renderAdminDialogActions() {
   const isClosed = conversation.status === 'closed';
   const isArchived = Boolean(conversation.archived_at);
   const mode = conversation.assistant_mode || 'auto';
+  const aiActive = mode === 'auto' && !conversation.owner_joined_at && !conversation.needs_human && !isClosed && !isArchived;
   actions.innerHTML = `
+    <span class="admin-inline-control">${aiActive ? adminText('AI отвечает', 'AI active') : adminText('AI на паузе', 'AI paused')}</span>
     <label class="admin-inline-control">${adminText('ИИ', 'AI')}<select data-admin-assistant-mode>
       ${[['auto','Auto'],['suggest','Suggest'],['disabled','Off']].map(([value,label]) => `<option value="${value}" ${mode === value ? 'selected' : ''}>${label}</option>`).join('')}
     </select></label>
+    ${!conversation.owner_joined_at && !isClosed && !isArchived ? `<button class="button small" type="button" data-admin-take-dialog>${adminText('Взять диалог', 'Take dialog')}</button>` : ''}
     ${isClosed ? `<button class="button small" type="button" data-admin-reopen-dialog>${adminText('Открыть снова', 'Reopen')}</button>` : `<button class="button small" type="button" data-admin-close-dialog>${adminText('Закрыть диалог', 'Close dialog')}</button>`}
     ${isArchived ? `<button class="button small" type="button" data-admin-restore-dialog>${adminText('Восстановить', 'Restore')}</button>` : `<button class="button small" type="button" data-admin-archive-dialog>${adminText('Архивировать', 'Archive')}</button>`}
     <button class="button small delete-review" type="button" data-admin-delete-dialog>${adminText('Удалить навсегда', 'Delete permanently')}</button>`;
@@ -2178,7 +2275,7 @@ function stopAdminChatSync() {
 
 async function fetchAdminConversations() {
   const [conversations, messages] = await Promise.all([
-    adminSupabase('admin.conversations.list', '/rest/v1/conversations?select=id,client_id,lead_id,support_ticket_id,subject,category,status,page_url,unread_for_owner,unread_for_guest,priority,assistant_mode,needs_human,archived_at,archived_by,deleted_at,deleted_by,closed_at,closed_by,created_at,updated_at&order=updated_at.desc'),
+    adminSupabase('admin.conversations.list', '/rest/v1/conversations?select=id,client_id,lead_id,support_ticket_id,subject,category,status,page_url,unread_for_owner,unread_for_guest,priority,assistant_mode,needs_human,owner_joined_at,archived_at,archived_by,deleted_at,deleted_by,closed_at,closed_by,created_at,updated_at&order=updated_at.desc'),
     adminSupabase('admin.messages.preview', '/rest/v1/messages?select=id,conversation_id,sender,body,created_at,client_message_id&order=created_at.desc&limit=200').catch(error => {
       setAdminSyncMode('error');
       return [];
@@ -2186,6 +2283,7 @@ async function fetchAdminConversations() {
   ]);
   setAdminConversations(conversations || []);
   adminState.messages = mergeChatMessages(adminState.messages || [], messages || []);
+  observeAdminClientMessages(messages || []);
   renderAdminDashboard();
   renderAdminDialogs();
 }
@@ -2248,7 +2346,7 @@ async function startAdminRealtime(conversationId) {
         if (conversationId !== adminChatState.activeConversationId) return;
         if (payload.eventType === 'DELETE' && payload.old?.id) {
           const current = activeAdminMessages().filter(message => message.id !== payload.old.id);
-          setAdminMessages(conversationId, current);
+          setAdminMessages(conversationId, current, { silent: true });
           renderAdminMessageHistory();
           return;
         }
@@ -2299,6 +2397,66 @@ async function startAdminRealtime(conversationId) {
   }
 }
 
+function stopAdminGlobalNotifications() {
+  window.clearTimeout(adminChatState.notificationPollingTimer);
+  adminChatState.notificationPollingTimer = null;
+  if (adminChatState.globalRealtimeChannel?.unsubscribe) {
+    adminChatState.globalRealtimeChannel.unsubscribe();
+  }
+  adminChatState.globalRealtimeChannel = null;
+}
+
+async function startAdminGlobalNotifications() {
+  if (adminChatState.globalRealtimeChannel || !window.supabase?.createClient) return false;
+  try {
+    const { client, session } = await ensureAdminAuthSession();
+    if (!client || !session?.access_token) throw new Error('OWNER session is unavailable for global notifications');
+    await client.realtime?.setAuth?.(session.access_token);
+    const channel = client.channel('owner-global-client-notifications')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, payload => {
+        if (!payload.new || payload.new.sender !== 'client') return;
+        const result = adminUpsertMessage(payload.new);
+        if (result.changed && payload.new.conversation_id === adminChatState.activeConversationId) renderAdminMessageHistory();
+        renderAdminDashboard();
+        renderAdminDialogs();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'conversations' }, payload => {
+        if (payload.eventType === 'DELETE' && payload.old?.id) {
+          adminChatState.conversations.delete(payload.old.id);
+          adminState.conversations = adminConversationList();
+        } else if (payload.new) {
+          adminUpsertConversation(payload.new);
+        }
+        renderAdminDashboard();
+        renderAdminDialogs();
+      })
+      .subscribe((status, err) => {
+        if (err) logAdminSupabaseError('admin.globalRealtime.status', err);
+        if (['CHANNEL_ERROR', 'TIMED_OUT', 'CLOSED'].includes(status)) {
+          adminChatState.globalRealtimeChannel = null;
+          scheduleAdminNotificationPolling(3000);
+        }
+      });
+    adminChatState.globalRealtimeChannel = channel;
+    return true;
+  } catch (error) {
+    logAdminSupabaseError('admin.globalRealtime.subscribe', error);
+    scheduleAdminNotificationPolling(3000);
+    return false;
+  }
+}
+
+function scheduleAdminNotificationPolling(delay = document.hidden ? 12000 : 4000) {
+  window.clearTimeout(adminChatState.notificationPollingTimer);
+  adminChatState.notificationPollingTimer = window.setTimeout(async () => {
+    try {
+      await fetchAdminConversations();
+    } finally {
+      scheduleAdminNotificationPolling();
+    }
+  }, delay);
+}
+
 async function startAdminChatSync(conversationId) {
   stopAdminChatSync();
   const generation = adminChatState.requestGeneration;
@@ -2324,7 +2482,7 @@ async function renderModeration() {
     const [reviews, leads, conversations, tickets, clients, messages, activity, assistantSettings, assistantKnowledge] = await Promise.all([
       getAllReviews(),
       adminSupabase('admin.leads.list', '/rest/v1/leads?select=id,name,contact,contact_method,preferred_channel,last_contact_channel,project_type,description,source,status,conversation_id,client_id,created_at,updated_at&order=created_at.desc'),
-      adminSupabase('admin.conversations.list.initial', '/rest/v1/conversations?select=id,client_id,lead_id,support_ticket_id,subject,category,status,page_url,unread_for_owner,unread_for_guest,priority,assistant_mode,needs_human,archived_at,archived_by,deleted_at,deleted_by,closed_at,closed_by,created_at,updated_at&order=updated_at.desc'),
+      adminSupabase('admin.conversations.list.initial', '/rest/v1/conversations?select=id,client_id,lead_id,support_ticket_id,subject,category,status,page_url,unread_for_owner,unread_for_guest,priority,assistant_mode,needs_human,owner_joined_at,archived_at,archived_by,deleted_at,deleted_by,closed_at,closed_by,created_at,updated_at&order=updated_at.desc'),
       adminSupabase('admin.supportTickets.list', '/rest/v1/support_tickets?select=id,client_id,conversation_id,subject,project,priority,description,status,contact_method,last_contact_channel,created_at,updated_at&order=created_at.desc'),
       adminSupabase('admin.clients.list', '/rest/v1/clients?select=id,name,contact,email,preferred_channel,last_contact_channel,created_at,updated_at&order=created_at.desc'),
       adminSupabase('admin.messages.preview.initial', '/rest/v1/messages?select=id,conversation_id,sender,body,created_at,client_message_id&order=created_at.desc&limit=200').catch(error => []),
@@ -2338,6 +2496,7 @@ async function renderModeration() {
     adminState.tickets = tickets || [];
     adminState.clients = clients || [];
     adminState.messages = mergeChatMessages([], messages || []);
+    observeAdminClientMessages(adminState.messages, { silent: true });
     adminChatState.messagesByConversation = new Map();
     adminState.messages.forEach(message => {
       const conversationMessages = adminChatState.messagesByConversation.get(message.conversation_id) || [];
@@ -2353,6 +2512,7 @@ async function renderModeration() {
     renderAdminTickets();
     renderAdminClients();
     renderAdminSecurity();
+    startAdminGlobalNotifications().catch(error => logAdminSupabaseError('admin.globalNotifications.start', error));
 
     moderationList.replaceChildren();
     const counters = { pending: 0, published: 0, rejected: 0 };
@@ -2407,6 +2567,7 @@ async function renderModeration() {
 }
 
 function renderAdminDashboard() {
+  renderAdminUnreadBadge();
   const counts = {
     'new-leads': adminState.leads.filter(item => item.status === 'new').length,
     'unread-dialogs': adminConversationList().filter(item => Number(item.unread_for_owner || 0) > 0).length,
@@ -2457,7 +2618,8 @@ function renderAdminDialogs() {
     const statusParts = [
       chatStatusLabels[dialog.status]?.ru || dialog.status || 'new',
       dialog.archived_at ? 'Архив' : '',
-      dialog.needs_human ? 'Нужен ответ' : ''
+      dialog.needs_human ? 'Нужен ответ' : '',
+      dialog.owner_joined_at ? 'Владелец подключился' : (dialog.assistant_mode === 'auto' ? 'AI отвечает' : '')
     ].filter(Boolean).join(' · ');
     return `<article class="admin-card dialog-item ${adminChatState.activeConversationId === dialog.id ? 'active' : ''}" data-dialog-id="${dialog.id}">
       <div class="admin-card-head"><div><strong>${escapeHtml(client?.name || lead?.name || ticket?.requester_name || 'Клиент')}</strong><small>${escapeHtml(chatCategoryLabels[category]?.ru || category)}${dialog.priority === 'high' ? ' · Нужен ответ' : ''}</small></div><span class="moderation-badge">${Number(dialog.unread_for_owner || 0)}</span></div>
@@ -2473,7 +2635,7 @@ async function loadDialogMessages(conversationId) {
   adminChatState.requestGeneration = generation;
   adminState.selectedConversationId = conversationId;
   adminChatState.activeConversationId = conversationId;
-  setAdminMessages(conversationId, []);
+  setAdminMessages(conversationId, [], { silent: true });
   adminChatState.lastSyncAt = '';
   adminChatState.lastMessageId = '';
   stopAdminChatSync();
@@ -2491,7 +2653,7 @@ async function loadDialogMessages(conversationId) {
     body: JSON.stringify({ p_conversation_id: conversationId, p_after_created_at: null, p_after_id: null })
   }, { conversation_id: conversationId });
   if (generation !== adminChatState.requestGeneration || conversationId !== adminChatState.activeConversationId) return;
-  setAdminMessages(conversationId, Array.isArray(messages) ? messages : []);
+  setAdminMessages(conversationId, Array.isArray(messages) ? messages : [], { silent: true });
   await adminSupabase('admin.chat.markRead', '/rest/v1/rpc/chat_owner_mark_read', {
     method: 'POST',
     headers: { Prefer: 'return=minimal' },
@@ -2503,6 +2665,20 @@ async function loadDialogMessages(conversationId) {
   renderAdminDialogActions();
   renderAdminMessageHistory();
   await startAdminChatSync(conversationId);
+}
+
+function requestedAdminConversationId() {
+  const id = new URLSearchParams(location.search).get('conversation') || '';
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id) ? id : '';
+}
+
+async function openRequestedAdminConversation() {
+  const conversationId = requestedAdminConversationId();
+  if (!conversationId || !moderationPanel || moderationPanel.classList.contains('hidden')) return;
+  if (!adminConversationList().some(item => item.id === conversationId)) return;
+  const messagesTab = $('[data-admin-tab="messages"]');
+  messagesTab?.click();
+  await loadDialogMessages(conversationId);
 }
 
 function renderAdminTickets() {
@@ -2550,7 +2726,7 @@ function renderAdminSecurity() {
 function openModerationPanel() {
   moderationLogin?.classList.add('hidden');
   moderationPanel?.classList.remove('hidden');
-  renderModeration().catch(() => {
+  renderModeration().then(() => openRequestedAdminConversation()).catch(() => {
     setAdminMessage(adminText('Панель открыта, но данные недоступны. Проверьте OWNER user id и RLS в Supabase.', 'The panel is open, but data is unavailable. Check the OWNER user id and RLS in Supabase.'), 'error');
   });
 }
@@ -2609,6 +2785,8 @@ moderationLogin?.addEventListener('submit', async event => {
 });
 
 moderationLogout?.addEventListener('click', () => {
+  stopAdminGlobalNotifications();
+  stopAdminChatSync();
   sessionStorage.removeItem(moderatorTokenKey);
   sessionStorage.removeItem(moderatorRefreshTokenKey);
   getSupabaseBrowserClient().then(client => client.auth.signOut()).catch(() => {});
@@ -2630,6 +2808,8 @@ moderationList?.addEventListener('click', async event => {
 });
 
 $$('.admin-tab').forEach(tab => tab.addEventListener('click', () => {
+  adminChatState.notificationSoundReady = true;
+  ensureAdminNotificationSound();
   $$('.admin-tab').forEach(item => item.classList.remove('active'));
   $$('.admin-view').forEach(item => item.classList.remove('active'));
   tab.classList.add('active');
@@ -2844,11 +3024,25 @@ $('#dialog-actions')?.addEventListener('click', async event => {
   const archiveButton = event.target.closest('[data-admin-archive-dialog]');
   const restoreButton = event.target.closest('[data-admin-restore-dialog]');
   const deleteButton = event.target.closest('[data-admin-delete-dialog]');
-  if (!closeButton && !reopenButton && !archiveButton && !restoreButton && !deleteButton) return;
-  const button = closeButton || reopenButton || archiveButton || restoreButton || deleteButton;
-  const operation = deleteButton ? 'delete_permanently' : archiveButton ? 'archive' : restoreButton ? 'restore' : closeButton ? 'close' : 'reopen';
+  const takeButton = event.target.closest('[data-admin-take-dialog]');
+  if (!closeButton && !reopenButton && !archiveButton && !restoreButton && !deleteButton && !takeButton) return;
+  const button = closeButton || reopenButton || archiveButton || restoreButton || deleteButton || takeButton;
+  const operation = takeButton ? 'take' : deleteButton ? 'delete_permanently' : archiveButton ? 'archive' : restoreButton ? 'restore' : closeButton ? 'close' : 'reopen';
   button.disabled = true;
   try {
+    if (takeButton) {
+      const result = await adminSupabase('admin.chat.takeDialog', '/rest/v1/rpc/chat_owner_take_dialog', {
+        method: 'POST',
+        headers: { Prefer: 'return=representation' },
+        body: JSON.stringify({ p_conversation_id: conversationId })
+      }, { conversation_id: conversationId });
+      (Array.isArray(result) ? result : [result]).filter(Boolean).forEach(conversation => adminUpsertConversation(conversation));
+      await fetchAdminConversations();
+      renderAdminDialogActions();
+      renderAdminMessageHistory();
+      setAdminMessage(adminText('Диалог взят владельцем. AI переведён в режим подсказок.', 'Dialog taken by owner. AI switched to suggest mode.'));
+      return;
+    }
     if (deleteButton) {
       const conversation = activeAdminConversation();
       if (conversation?.status !== 'closed') {
