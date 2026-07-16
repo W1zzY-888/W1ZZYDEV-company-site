@@ -916,9 +916,15 @@ async function signChatAttachment(attachment) {
 }
 async function hydrateVisibleAttachments() {
   const nodes = $$('[data-attachment-id][data-attachment-path]');
+  let adminMessages = [];
+  try {
+    adminMessages = activeAdminMessages();
+  } catch (error) {
+    adminMessages = [];
+  }
   await Promise.all(nodes.map(async node => {
     if (node.dataset.attachmentLoaded === 'true') return;
-    const message = [...universalChatState.messages, ...activeAdminMessages()].find(item =>
+    const message = [...universalChatState.messages, ...adminMessages].find(item =>
       (item.attachments || []).some(attachment => attachment.id === node.dataset.attachmentId)
     );
     const attachment = (message?.attachments || []).find(item => item.id === node.dataset.attachmentId);
@@ -1300,8 +1306,10 @@ function renderUniversalChat(notice = '') {
       );
     });
   });
-  $('[data-chat-file]', replyForm)?.addEventListener('change', event => renderFilePreview(event.currentTarget));
-  $('[data-chat-message]', replyForm)?.addEventListener('input', () => markGuestTyping());
+  if (replyForm) {
+    $('[data-chat-file]', replyForm)?.addEventListener('change', event => renderFilePreview(event.currentTarget));
+    $('[data-chat-message]', replyForm)?.addEventListener('input', () => markGuestTyping());
+  }
   $('[data-chat-close-conversation]', body)?.addEventListener('click', event => closeGuestConversation(event.currentTarget).catch(error => {
     console.error('[CHAT CLOSE ERROR]', {
       operation: 'guest_close_conversation',
@@ -3598,8 +3606,11 @@ $('#dialog-reply-form')?.addEventListener('submit', async event => {
     if (button) button.disabled = false;
   }
 });
-$('[data-admin-chat-file]')?.addEventListener('change', event => renderFilePreview(event.currentTarget));
-$('textarea[name="message"]', $('#dialog-reply-form'))?.addEventListener('input', () => markOwnerTyping());
+const adminDialogReplyForm = $('#dialog-reply-form');
+if (adminDialogReplyForm) {
+  $('[data-admin-chat-file]', adminDialogReplyForm)?.addEventListener('change', event => renderFilePreview(event.currentTarget));
+  $('textarea[name="message"]', adminDialogReplyForm)?.addEventListener('input', () => markOwnerTyping());
+}
 
 $('#dialog-messages')?.addEventListener('click', async event => {
   const retryButton = event.target.closest('[data-retry-owner-message]');
