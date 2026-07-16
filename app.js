@@ -636,6 +636,9 @@ const universalChatState = {
   messages: [],
   unread: 0,
   pollTimer: 0,
+  realtimeChannel: null,
+  realtimeConversationId: '',
+  pollInFlight: false,
   lastSyncAt: '',
   lastMessageId: '',
   conversationStatus: 'new',
@@ -697,6 +700,20 @@ function chatLabel(map, key) {
 function createClientMessageId(prefix = 'msg') {
   return `${prefix}-${Date.now()}-${crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(16).slice(2)}`;
 }
+function chatDebug(operation, details = {}) {
+  try {
+    if (localStorage.getItem('W1ZZYDEV_CHAT_DEBUG') !== 'true' && window.CHAT_DEBUG !== true) return;
+    console.debug('[W1ZZYDEV CHAT DEBUG]', {
+      operation,
+      conversationId: details.conversationId || details.conversation_id || universalChatState.conversationId || (typeof adminChatState !== 'undefined' ? adminChatState.activeConversationId : '') || '',
+      messageId: details.messageId || details.id || '',
+      clientMessageId: details.clientMessageId || details.client_message_id || '',
+      sender: details.sender || '',
+      count: details.count ?? '',
+      status: details.status || ''
+    });
+  } catch (error) {}
+}
 function normalizeChatMessage(message) {
   const serverId = message.id && !String(message.id).startsWith('temp-') ? message.id : '';
   const deliveryStatus = message.delivery_status || (message.failed ? 'failed' : message.pending ? 'sending' : 'sent');
@@ -721,29 +738,37 @@ function normalizeChatMessage(message) {
 function isLocalUnsentMessage(message) {
   return ['sending', 'failed'].includes(message?.delivery_status) || message?.pending || message?.failed || String(message?.id || '').startsWith('temp-');
 }
+function isServerChatMessage(message) {
+  return Boolean(message?.server_id || (message?.id && !String(message.id).startsWith('temp-')));
+}
+function sameChatMessage(left, right) {
+  if (!left || !right) return false;
+  if (isServerChatMessage(left) && isServerChatMessage(right) && left.id === right.id) return true;
+  return Boolean(left.client_message_id && right.client_message_id && left.client_message_id === right.client_message_id);
+}
+function mergeChatMessagePair(existing, incoming) {
+  const existingServer = isServerChatMessage(existing);
+  const incomingServer = isServerChatMessage(incoming);
+  if (existingServer && !incomingServer) return existing;
+  return {
+    ...existing,
+    ...incoming,
+    id: incomingServer ? incoming.id : existing.id,
+    server_id: incomingServer ? incoming.id : existing.server_id,
+    delivery_status: incomingServer ? 'sent' : incoming.delivery_status || existing.delivery_status,
+    pending: incomingServer ? false : Boolean(incoming.pending),
+    failed: incomingServer ? false : Boolean(incoming.failed),
+    error_message: incomingServer ? null : incoming.error_message || existing.error_message || null
+  };
+}
 function mergeChatMessages(currentMessages, incomingMessages) {
-  const byKey = new Map();
-  [...currentMessages, ...incomingMessages].map(normalizeChatMessage).forEach(message => {
-    const hasServerId = message.server_id || (message.id && !String(message.id).startsWith('temp-'));
-    const keys = [hasServerId ? message.id : '', message.client_message_id].filter(Boolean);
-    const existingKey = keys.find(key => byKey.has(key));
-    const existing = existingKey ? byKey.get(existingKey) : null;
-    const serverArrived = Boolean(hasServerId);
-    const next = existing
-      ? {
-          ...existing,
-          ...message,
-          id: serverArrived ? message.id : existing.id,
-          server_id: serverArrived ? message.id : existing.server_id,
-          delivery_status: serverArrived ? 'sent' : message.delivery_status,
-          pending: serverArrived ? false : message.pending,
-          failed: serverArrived ? false : message.failed,
-          error_message: serverArrived ? null : message.error_message
-        }
-      : message;
-    keys.forEach(key => byKey.set(key, next));
+  const merged = [];
+  [...(currentMessages || []), ...(incomingMessages || [])].map(normalizeChatMessage).forEach(message => {
+    const index = merged.findIndex(existing => sameChatMessage(existing, message));
+    if (index >= 0) merged[index] = mergeChatMessagePair(merged[index], message);
+    else merged.push(message);
   });
-  return [...new Set(byKey.values())].sort((a, b) => {
+  return merged.sort((a, b) => {
     const byDate = new Date(a.created_at) - new Date(b.created_at);
     return byDate || String(a.id || a.client_message_id).localeCompare(String(b.id || b.client_message_id));
   });
@@ -760,9 +785,15 @@ function messageClass(message) {
 }
 function upsertMessage(message, state = universalChatState) {
   state.messages = mergeChatMessages(state.messages || [], [message]);
-  const last = state.messages.at(-1);
+  const last = state.messages.filter(isServerChatMessage).at(-1) || state.messages.at(-1);
   state.lastSyncAt = last?.created_at || state.lastSyncAt || '';
   state.lastMessageId = last?.id || state.lastMessageId || '';
+  chatDebug('message.merge', {
+    id: message?.id,
+    client_message_id: message?.client_message_id,
+    sender: message?.sender,
+    count: state.messages.length
+  });
   return state.messages;
 }
 function isPublicChatPage() {
@@ -785,6 +816,8 @@ function saveChatSession(session) {
   }));
 }
 function clearChatSession() {
+  window.clearInterval(universalChatState.pollTimer);
+  stopUniversalChatRealtime();
   sessionStorage.removeItem(universalChatStorageKey);
   universalChatState.token = '';
   universalChatState.tokenHash = '';
@@ -1046,7 +1079,7 @@ async function startUniversalChat(payload) {
   const messages = await loadUniversalChatMessages();
   const sourceMessage = messages.find(message => message.client_message_id === clientMessageId);
   requestAiAssistant({ messageId: sourceMessage?.id || '', clientMessageId }).catch(() => {});
-  startUniversalChatPolling();
+  startUniversalChatSync();
   return data;
 }
 async function startUniversalChatFromForm(formElement) {
@@ -1072,29 +1105,37 @@ async function startUniversalChatFromForm(formElement) {
 }
 async function loadUniversalChatMessages() {
   if (!universalChatState.tokenHash) return [];
+  if (universalChatState.pollInFlight) return universalChatState.messages;
+  universalChatState.pollInFlight = true;
   const result = await supabaseRequest('/rest/v1/rpc/chat_guest_messages', {
     method: 'POST',
     headers: { Prefer: 'return=representation' },
     body: JSON.stringify({
       p_guest_token_hash: universalChatState.tokenHash,
-      p_after_created_at: universalChatState.lastSyncAt || null,
-      p_after_id: universalChatState.lastMessageId || null
+      p_after_created_at: null,
+      p_after_id: null
     })
+  }).finally(() => {
+    universalChatState.pollInFlight = false;
   });
   const messages = Array.isArray(result) ? result : [];
-  const knownIds = new Set(universalChatState.messages.map(item => item.id));
+  const knownIds = new Set(universalChatState.messages.filter(isServerChatMessage).map(item => item.id));
   const previousStatus = universalChatState.conversationStatus;
+  universalChatState.messages = mergeChatMessages(universalChatState.messages, messages);
   messages.forEach(message => {
     universalChatState.conversationStatus = message.conversation_status || universalChatState.conversationStatus;
     universalChatState.closedAt = message.closed_at || universalChatState.closedAt;
     universalChatState.ratingSubmitted = Boolean(message.rating_submitted || universalChatState.ratingSubmitted);
-    upsertMessage(message);
   });
+  const last = universalChatState.messages.filter(isServerChatMessage).at(-1);
+  universalChatState.lastSyncAt = last?.created_at || '';
+  universalChatState.lastMessageId = last?.id || '';
   const newOwnerMessages = messages.filter(message => message.sender === 'owner' && !knownIds.has(message.id)).length;
   if (!universalChatState.open && newOwnerMessages) {
     universalChatState.unread += newOwnerMessages;
     updateChatBadge();
   }
+  chatDebug('client.poll', { count: messages.length, conversationId: universalChatState.conversationId });
   if (previousStatus !== universalChatState.conversationStatus) renderUniversalChat();
   else renderUniversalChatMessages();
   return messages;
@@ -1283,10 +1324,67 @@ async function restoreUniversalChat() {
   try {
     await loadUniversalChatMessages();
     renderUniversalChat();
-    startUniversalChatPolling();
+    startUniversalChatSync();
   } catch (error) {
     clearChatSession();
     renderUniversalChat();
+  }
+}
+function stopUniversalChatRealtime() {
+  if (universalChatState.realtimeChannel?.unsubscribe) {
+    universalChatState.realtimeChannel.unsubscribe();
+  }
+  universalChatState.realtimeChannel = null;
+  universalChatState.realtimeConversationId = '';
+}
+async function startUniversalChatRealtime() {
+  if (!universalChatState.conversationId || !window.supabase?.createClient) return false;
+  if (universalChatState.realtimeChannel && universalChatState.realtimeConversationId === universalChatState.conversationId) return true;
+  stopUniversalChatRealtime();
+  try {
+    const client = await getSupabaseBrowserClient();
+    const conversationId = universalChatState.conversationId;
+    const channel = client.channel(`guest-conversation-${conversationId}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'messages', filter: `conversation_id=eq.${conversationId}` }, payload => {
+        if (conversationId !== universalChatState.conversationId) return;
+        if (payload.eventType === 'DELETE' && payload.old?.id) {
+          universalChatState.messages = universalChatState.messages.filter(message => message.id !== payload.old.id);
+          renderUniversalChatMessages();
+          return;
+        }
+        if (payload.new) {
+          const knownIds = new Set(universalChatState.messages.filter(isServerChatMessage).map(item => item.id));
+          upsertMessage(payload.new);
+          if (payload.new.sender === 'owner' && !universalChatState.open && !knownIds.has(payload.new.id)) {
+            universalChatState.unread += 1;
+            updateChatBadge();
+          }
+          chatDebug('client.realtime.message', payload.new);
+          renderUniversalChatMessages();
+        }
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'conversations', filter: `id=eq.${conversationId}` }, payload => {
+        if (conversationId !== universalChatState.conversationId || !payload.new) return;
+        universalChatState.conversationStatus = payload.new.status || universalChatState.conversationStatus;
+        universalChatState.closedAt = payload.new.closed_at || universalChatState.closedAt;
+        chatDebug('client.realtime.conversation', { status: payload.new.status, conversationId });
+        renderUniversalChat();
+      })
+      .subscribe((status, err) => {
+        chatDebug('client.realtime.status', { status, conversationId });
+        if (err) console.error('[W1ZZYDEV CHAT]', { operation: 'client.realtime.status', message: err?.message || String(err), conversationId });
+        if (status === 'SUBSCRIBED') loadUniversalChatMessages().catch(() => {});
+        if (['CHANNEL_ERROR', 'TIMED_OUT', 'CLOSED'].includes(status)) {
+          universalChatState.realtimeChannel = null;
+          loadUniversalChatMessages().catch(() => {});
+        }
+      });
+    universalChatState.realtimeChannel = channel;
+    universalChatState.realtimeConversationId = conversationId;
+    return true;
+  } catch (error) {
+    console.error('[W1ZZYDEV CHAT]', { operation: 'client.realtime.subscribe', message: error?.message || String(error), conversationId: universalChatState.conversationId || '' });
+    return false;
   }
 }
 function startUniversalChatPolling() {
@@ -1294,6 +1392,10 @@ function startUniversalChatPolling() {
   universalChatState.pollTimer = window.setInterval(() => {
     if (document.visibilityState === 'visible' && universalChatState.tokenHash) loadUniversalChatMessages().catch(() => {});
   }, 2000);
+}
+function startUniversalChatSync() {
+  startUniversalChatRealtime().catch(() => {});
+  startUniversalChatPolling();
 }
 async function attachLeadToUniversalChat(details) {
   openUniversalChat({ category: 'project', notice: lang === 'ru' ? 'Заявка принята. Продолжим обсуждение здесь.' : 'Request accepted. We can continue here.' });
@@ -2186,7 +2288,7 @@ function adminUpsertConversation(conversation) {
   renderAdminUnreadBadge();
 }
 
-function adminUpsertMessage(message) {
+function adminUpsertMessage(message, { silent = false } = {}) {
   const conversationId = message?.conversation_id || adminChatState.activeConversationId;
   if (!conversationId) return [];
   const currentMessages = adminChatState.messagesByConversation.get(conversationId) || [];
@@ -2202,7 +2304,7 @@ function adminUpsertMessage(message) {
   if (message.conversation_id) {
     adminState.messages = mergeChatMessages(adminState.messages || [], [message]);
   }
-  observeAdminClientMessages([message]);
+  observeAdminClientMessages([message], { silent });
   return { messages: nextMessages, changed: previousSignature !== nextSignature };
 }
 
@@ -2351,7 +2453,7 @@ async function startAdminRealtime(conversationId) {
           return;
         }
         if (payload.new) {
-          const result = adminUpsertMessage(payload.new);
+          const result = adminUpsertMessage(payload.new, { silent: true });
           if (result.changed) renderAdminMessageHistory();
           renderAdminDialogs();
         }
@@ -3131,9 +3233,16 @@ $('#dialog-actions')?.addEventListener('change', async event => {
 });
 
 document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && universalChatState.tokenHash) {
+    startUniversalChatRealtime().catch(() => {});
+    loadUniversalChatMessages().catch(() => {});
+  }
   if (document.visibilityState === 'visible' && adminChatState.activeConversationId) {
     pollAdminChat({ generation: adminChatState.requestGeneration }).catch(() => {});
     scheduleAdminPolling(adminChatState.requestGeneration, 2000);
+  }
+  if (document.visibilityState === 'visible' && moderationPanel && !moderationPanel.classList.contains('hidden')) {
+    fetchAdminConversations().catch(() => {});
   }
 });
 
