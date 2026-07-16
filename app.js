@@ -636,9 +636,14 @@ const universalChatState = {
   messages: [],
   unread: 0,
   pollTimer: 0,
+  presenceTimer: 0,
+  typingTimer: 0,
   realtimeChannel: null,
   realtimeConversationId: '',
   pollInFlight: false,
+  ownerLastSeenAt: '',
+  ownerTypingUntil: '',
+  ownerStatusLabel: '',
   lastSyncAt: '',
   lastMessageId: '',
   conversationStatus: 'new',
@@ -647,6 +652,24 @@ const universalChatState = {
   sending: false,
   toastTimer: 0,
   category: 'question'
+};
+const chatAttachmentBucket = 'chat-attachments';
+const chatAttachmentMaxBytes = 10 * 1024 * 1024;
+const chatAttachmentAllowedTypes = new Set([
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+  'image/gif',
+  'application/pdf',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+]);
+const chatNotificationState = {
+  unread: 0,
+  originalTitle: document.title,
+  faviconHref: '',
+  faviconElement: null,
+  toastTimer: 0
 };
 const chatCategoryLabels = {
   project: { ru: 'Хочу обсудить проект', en: 'Discuss a project' },
@@ -717,6 +740,11 @@ function chatDebug(operation, details = {}) {
 function normalizeChatMessage(message) {
   const serverId = message.id && !String(message.id).startsWith('temp-') ? message.id : '';
   const deliveryStatus = message.delivery_status || (message.failed ? 'failed' : message.pending ? 'sending' : 'sent');
+  const attachments = Array.isArray(message.attachments)
+    ? message.attachments
+    : typeof message.attachments === 'string'
+      ? (() => { try { return JSON.parse(message.attachments || '[]'); } catch (error) { return []; } })()
+      : [];
   return {
     id: message.id || (message.client_message_id ? `temp-${message.client_message_id}` : createClientMessageId('local')),
     conversation_id: message.conversation_id || '',
@@ -728,6 +756,7 @@ function normalizeChatMessage(message) {
     conversation_status: message.conversation_status || '',
     closed_at: message.closed_at || '',
     rating_submitted: Boolean(message.rating_submitted),
+    attachments: attachments.filter(Boolean),
     delivery_status: deliveryStatus,
     error_message: message.error_message || null,
     pending: deliveryStatus === 'sending' || Boolean(message.pending),
@@ -783,6 +812,164 @@ function mergeById(currentItems, incomingItems) {
 function messageClass(message) {
   return ['message-bubble', message.sender || 'system', message.pending ? 'pending' : '', message.failed ? 'failed' : ''].filter(Boolean).join(' ');
 }
+function formatFileSize(bytes = 0) {
+  const size = Number(bytes) || 0;
+  if (size >= 1024 * 1024) return `${(size / (1024 * 1024)).toFixed(size > 5 * 1024 * 1024 ? 0 : 1)} MB`;
+  if (size >= 1024) return `${Math.round(size / 1024)} KB`;
+  return `${size} B`;
+}
+function safeFileName(name = 'file') {
+  const cleaned = String(name || 'file').normalize('NFKD').replace(/[^\w.\- ]+/g, '').trim().replace(/\s+/g, '-');
+  return cleaned.slice(0, 120) || 'file';
+}
+function attachmentIcon(attachment) {
+  if (attachment.kind === 'image') return 'IMG';
+  if (/pdf/i.test(attachment.mime_type || '')) return 'PDF';
+  if (/wordprocessingml|docx/i.test(attachment.mime_type || '')) return 'DOCX';
+  if (/spreadsheetml|xlsx/i.test(attachment.mime_type || '')) return 'XLSX';
+  return 'FILE';
+}
+function renderMessageAttachments(message) {
+  const attachments = Array.isArray(message.attachments) ? message.attachments : [];
+  if (!attachments.length) return '';
+  return `<div class="chat-attachments">${attachments.map(attachment => {
+    const id = escapeHtml(attachment.id || '');
+    const name = escapeHtml(attachment.file_name || 'file');
+    const size = escapeHtml(formatFileSize(attachment.size_bytes));
+    const common = `data-attachment-id="${id}" data-attachment-path="${escapeHtml(attachment.storage_path || '')}" data-attachment-kind="${escapeHtml(attachment.kind || '')}"`;
+    if (attachment.kind === 'image') {
+      return `<button class="chat-attachment image" type="button" ${common} aria-label="${name}">
+        <span class="chat-attachment-preview" data-attachment-preview>${attachment.signed_url ? `<img src="${escapeHtml(attachment.signed_url)}" alt="${name}">` : 'IMG'}</span>
+        <span><strong>${name}</strong><small>${size}</small></span>
+      </button>`;
+    }
+    return `<a class="chat-attachment document" href="${escapeHtml(attachment.signed_url || '#')}" target="_blank" rel="noopener noreferrer" download="${name}" ${common}>
+      <span class="chat-attachment-type">${escapeHtml(attachmentIcon(attachment))}</span>
+      <span><strong>${name}</strong><small>${size}</small></span>
+      <b>${escapeHtml(lang === 'ru' ? 'Скачать' : 'Download')}</b>
+    </a>`;
+  }).join('')}</div>`;
+}
+function renderMessageBody(message) {
+  return `${message.body ? `<p>${escapeHtml(message.body)}</p>` : ''}${renderMessageAttachments(message)}`;
+}
+function validateChatFile(file) {
+  if (!file) return null;
+  if (!chatAttachmentAllowedTypes.has(file.type)) {
+    throw new Error(lang === 'ru' ? 'Этот тип файла не поддерживается.' : 'This file type is not supported.');
+  }
+  if (file.size > chatAttachmentMaxBytes) {
+    throw new Error(lang === 'ru' ? 'Файл больше 10 MB.' : 'The file is larger than 10 MB.');
+  }
+  return file;
+}
+async function compressChatImage(file) {
+  validateChatFile(file);
+  if (!file.type.startsWith('image/') || file.type === 'image/gif' || file.size < 1024 * 1024) return file;
+  if (typeof createImageBitmap !== 'function') return file;
+  const bitmap = await createImageBitmap(file);
+  const maxSide = 1600;
+  const ratio = Math.min(1, maxSide / Math.max(bitmap.width, bitmap.height));
+  const canvas = document.createElement('canvas');
+  canvas.width = Math.round(bitmap.width * ratio);
+  canvas.height = Math.round(bitmap.height * ratio);
+  const context = canvas.getContext('2d');
+  context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+  const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.84));
+  bitmap.close?.();
+  if (!blob || blob.size >= file.size) return file;
+  return new File([blob], file.name.replace(/\.(png|webp|jpeg|jpg)$/i, '.jpg'), { type: 'image/jpeg' });
+}
+async function uploadChatAttachment({ file, actor, conversationId, clientMessageId }) {
+  const processed = await compressChatImage(file);
+  validateChatFile(processed);
+  const client = await getSupabaseBrowserClient();
+  const prefix = actor === 'owner'
+    ? `owner/${conversationId}`
+    : `guest/${universalChatState.tokenHash}`;
+  const storagePath = `${prefix}/${clientMessageId}/${Date.now()}-${safeFileName(processed.name)}`;
+  const { error } = await client.storage
+    .from(chatAttachmentBucket)
+    .upload(storagePath, processed, {
+      contentType: processed.type,
+      cacheControl: '3600',
+      upsert: false
+    });
+  if (error) throw error;
+  return {
+    storage_path: storagePath,
+    file_name: safeFileName(processed.name),
+    mime_type: processed.type,
+    size_bytes: processed.size,
+    kind: processed.type.startsWith('image/') ? 'image' : 'document'
+  };
+}
+async function signChatAttachment(attachment) {
+  if (!attachment?.storage_path || attachment.signed_url) return attachment?.signed_url || '';
+  const client = await getSupabaseBrowserClient();
+  const { data, error } = await client.storage
+    .from(attachment.bucket_id || chatAttachmentBucket)
+    .createSignedUrl(attachment.storage_path, 600);
+  if (error) throw error;
+  attachment.signed_url = data?.signedUrl || '';
+  return attachment.signed_url;
+}
+async function hydrateVisibleAttachments() {
+  const nodes = $$('[data-attachment-id][data-attachment-path]');
+  await Promise.all(nodes.map(async node => {
+    if (node.dataset.attachmentLoaded === 'true') return;
+    const message = [...universalChatState.messages, ...activeAdminMessages()].find(item =>
+      (item.attachments || []).some(attachment => attachment.id === node.dataset.attachmentId)
+    );
+    const attachment = (message?.attachments || []).find(item => item.id === node.dataset.attachmentId);
+    if (!attachment) return;
+    try {
+      const signedUrl = await signChatAttachment(attachment);
+      node.dataset.attachmentLoaded = 'true';
+      if (attachment.kind === 'image') {
+        const preview = $('[data-attachment-preview]', node);
+        if (preview) preview.innerHTML = `<img src="${escapeHtml(signedUrl)}" alt="${escapeHtml(attachment.file_name || 'image')}">`;
+      } else if (node.tagName === 'A') {
+        node.href = signedUrl;
+      }
+    } catch (error) {
+      node.classList.add('failed');
+    }
+  }));
+}
+function renderFilePreview(input) {
+  const preview = input?.closest('form')?.querySelector('[data-file-preview]');
+  if (!preview) return;
+  const file = input.files?.[0];
+  if (!file) {
+    preview.innerHTML = '';
+    preview.classList.add('hidden');
+    return;
+  }
+  try {
+    validateChatFile(file);
+    preview.classList.remove('hidden');
+    if (file.type.startsWith('image/') && file.type !== 'image/gif') {
+      const url = URL.createObjectURL(file);
+      preview.innerHTML = `<img src="${url}" alt=""><span><strong>${escapeHtml(file.name)}</strong><small>${escapeHtml(formatFileSize(file.size))}</small></span>`;
+      window.setTimeout(() => URL.revokeObjectURL(url), 6000);
+    } else {
+      preview.innerHTML = `<span class="chat-attachment-type">${escapeHtml(attachmentIcon({ mime_type: file.type }))}</span><span><strong>${escapeHtml(file.name)}</strong><small>${escapeHtml(formatFileSize(file.size))}</small></span>`;
+    }
+  } catch (error) {
+    preview.classList.remove('hidden');
+    preview.innerHTML = `<span>${escapeHtml(error.message)}</span>`;
+  }
+}
+function openAttachmentLightbox(src, alt = '') {
+  if (!src) return;
+  const overlay = document.createElement('button');
+  overlay.type = 'button';
+  overlay.className = 'chat-lightbox';
+  overlay.innerHTML = `<img src="${escapeHtml(src)}" alt="${escapeHtml(alt)}">`;
+  overlay.addEventListener('click', () => overlay.remove());
+  document.body.appendChild(overlay);
+}
 function upsertMessage(message, state = universalChatState) {
   state.messages = mergeChatMessages(state.messages || [], [message]);
   const last = state.messages.filter(isServerChatMessage).at(-1) || state.messages.at(-1);
@@ -817,6 +1004,8 @@ function saveChatSession(session) {
 }
 function clearChatSession() {
   window.clearInterval(universalChatState.pollTimer);
+  window.clearInterval(universalChatState.presenceTimer);
+  window.clearTimeout(universalChatState.typingTimer);
   stopUniversalChatRealtime();
   sessionStorage.removeItem(universalChatStorageKey);
   universalChatState.token = '';
@@ -826,6 +1015,9 @@ function clearChatSession() {
   universalChatState.conversationStatus = 'new';
   universalChatState.closedAt = '';
   universalChatState.ratingSubmitted = false;
+  universalChatState.ownerLastSeenAt = '';
+  universalChatState.ownerTypingUntil = '';
+  universalChatState.ownerStatusLabel = '';
 }
 function universalChatRoot() {
   return $('#w1zzy-chat');
@@ -844,7 +1036,7 @@ function createUniversalChatWidget() {
     </button>
     <div class="support-widget-panel hidden" id="w1zzy-chat-panel" role="dialog" aria-label="W1ZZYDEV Support">
       <div class="support-widget-head">
-        <div><strong>W1ZZYDEV Support</strong><small data-ru="Онлайн-диалог со студией" data-en="Online dialog with the studio">Онлайн-диалог со студией</small></div>
+        <div><strong>W1ZZYDEV Support</strong><small data-chat-presence data-ru="Статус обновляется" data-en="Status updating">Статус обновляется</small></div>
         <div class="support-widget-controls"><button type="button" data-chat-minimize aria-label="Свернуть">−</button><button type="button" data-chat-close aria-label="Закрыть">×</button></div>
       </div>
       <div class="support-widget-body" data-chat-body></div>
@@ -902,11 +1094,14 @@ function setWidgetState(nextState = 'closed', options = {}) {
   } else {
     universalChatState.unread = 0;
     updateChatBadge();
+    resetChatNotifications();
+    markGuestPresence(false).catch(() => {});
     window.setTimeout(() => $('[data-chat-message]', root)?.focus(), 80);
   }
 }
 function openUniversalChat(options = {}) {
   createUniversalChatWidget();
+  if ('Notification' in window && Notification.permission === 'default') Notification.requestPermission().catch(() => {});
   setWidgetState('open');
   if (options.category) universalChatState.category = options.category;
   renderUniversalChat(options.notice);
@@ -922,6 +1117,124 @@ function updateChatBadge() {
   if (!badge) return;
   badge.textContent = String(universalChatState.unread);
   badge.classList.toggle('hidden', universalChatState.unread <= 0);
+}
+function formatPresenceLabel(lastSeenAt = '', typingUntil = '') {
+  if (typingUntil && new Date(typingUntil).getTime() > Date.now()) return lang === 'ru' ? 'Печатает...' : 'Typing...';
+  if (!lastSeenAt) return lang === 'ru' ? 'Был(а) недавно' : 'Seen recently';
+  const seconds = Math.max(0, Math.round((Date.now() - new Date(lastSeenAt).getTime()) / 1000));
+  if (seconds <= 45) return lang === 'ru' ? 'Онлайн' : 'Online';
+  if (seconds <= 90) return lang === 'ru' ? 'Был(а) только что' : 'Seen just now';
+  const minutes = Math.max(1, Math.round(seconds / 60));
+  return lang === 'ru' ? `Был(а) ${minutes} мин назад` : `Seen ${minutes} min ago`;
+}
+function updateClientPresenceLabel() {
+  const label = $('[data-chat-presence]', universalChatRoot());
+  if (!label) return;
+  const text = universalChatState.ownerStatusLabel || formatPresenceLabel(universalChatState.ownerLastSeenAt, universalChatState.ownerTypingUntil);
+  label.textContent = text || (lang === 'ru' ? 'Статус обновляется' : 'Status updating');
+}
+function setClientPresence(data = {}) {
+  universalChatState.ownerLastSeenAt = data.owner_last_seen_at || universalChatState.ownerLastSeenAt || '';
+  universalChatState.ownerTypingUntil = data.owner_typing_until || universalChatState.ownerTypingUntil || '';
+  universalChatState.ownerStatusLabel = formatPresenceLabel(universalChatState.ownerLastSeenAt, universalChatState.ownerTypingUntil);
+  updateClientPresenceLabel();
+}
+function resetChatNotifications() {
+  chatNotificationState.unread = 0;
+  document.title = chatNotificationState.originalTitle || document.title.replace(/^\(\d+\)\s*/, '');
+  restoreFaviconBadge();
+}
+function ensureFaviconElement() {
+  if (chatNotificationState.faviconElement) return chatNotificationState.faviconElement;
+  const icon = document.querySelector('link[rel~="icon"]');
+  chatNotificationState.faviconElement = icon;
+  chatNotificationState.faviconHref = icon?.href || '/favicon.ico';
+  return icon;
+}
+function restoreFaviconBadge() {
+  const icon = ensureFaviconElement();
+  if (icon && chatNotificationState.faviconHref) icon.href = chatNotificationState.faviconHref;
+}
+function updateFaviconBadge(count = chatNotificationState.unread) {
+  const icon = ensureFaviconElement();
+  if (!icon || !count) {
+    restoreFaviconBadge();
+    return;
+  }
+  const image = new Image();
+  image.crossOrigin = 'anonymous';
+  image.onload = () => {
+    const canvas = document.createElement('canvas');
+    canvas.width = 64;
+    canvas.height = 64;
+    const context = canvas.getContext('2d');
+    context.drawImage(image, 0, 0, 64, 64);
+    context.fillStyle = '#63e6ba';
+    context.beginPath();
+    context.arc(48, 16, 14, 0, Math.PI * 2);
+    context.fill();
+    context.fillStyle = '#06100d';
+    context.font = '900 18px system-ui';
+    context.textAlign = 'center';
+    context.textBaseline = 'middle';
+    context.fillText(count > 9 ? '9+' : String(count), 48, 16);
+    icon.href = canvas.toDataURL('image/png');
+  };
+  image.src = chatNotificationState.faviconHref || '/favicon.ico';
+}
+function setDocumentUnread(count) {
+  chatNotificationState.unread = Math.max(0, count);
+  document.title = count ? `(${count}) W1ZZYDEV` : (chatNotificationState.originalTitle || 'W1ZZYDEV');
+  updateFaviconBadge(count);
+}
+function showModernChatToast({ role = 'system', title = '', message = '', conversationId = '' } = {}) {
+  let stack = $('.chat-toast-stack');
+  if (!stack) {
+    stack = document.createElement('div');
+    stack.className = 'chat-toast-stack';
+    document.body.appendChild(stack);
+  }
+  const toast = document.createElement('button');
+  toast.type = 'button';
+  toast.className = `chat-event-toast ${role}`;
+  toast.innerHTML = `<strong>${escapeHtml(title || 'W1ZZYDEV')}</strong><span>${escapeHtml(message || '')}</span>`;
+  toast.addEventListener('click', () => {
+    if (conversationId && location.pathname.startsWith('/reviews/moderation/')) {
+      loadDialogMessages(conversationId).catch(() => {});
+    } else {
+      openUniversalChat();
+    }
+    toast.remove();
+  });
+  stack.appendChild(toast);
+  window.setTimeout(() => toast.classList.add('visible'), 20);
+  window.setTimeout(() => {
+    toast.classList.remove('visible');
+    window.setTimeout(() => toast.remove(), 240);
+  }, 5200);
+}
+function maybeBrowserNotify({ title, body, conversationId, target = 'client' } = {}) {
+  if (!('Notification' in window) || document.visibilityState === 'visible') return;
+  if (Notification.permission === 'default') Notification.requestPermission().catch(() => {});
+  if (Notification.permission !== 'granted') return;
+  const notification = new Notification(title || 'W1ZZYDEV', { body: body || '', icon: '/assets/favicon-48.png' });
+  notification.onclick = () => {
+    window.focus();
+    if (target === 'admin' && conversationId) {
+      location.href = `/reviews/moderation/?conversation=${encodeURIComponent(conversationId)}`;
+    } else {
+      openUniversalChat();
+    }
+    notification.close();
+  };
+}
+function notifyChatEvent({ role = 'system', sender = 'system', body = '', conversationId = '', target = 'client' } = {}) {
+  const title = target === 'admin'
+    ? (lang === 'ru' ? 'Новое сообщение от клиента' : 'New message from client')
+    : (lang === 'ru' ? 'Новое сообщение от владельца' : 'New message from owner');
+  showModernChatToast({ role, title, message: body || title, conversationId });
+  if (document.visibilityState !== 'visible') setDocumentUnread(chatNotificationState.unread + 1);
+  maybeBrowserNotify({ title, body, conversationId, target });
 }
 function chatExternalLinksHtml() {
   return `<div class="support-widget-external"><span data-ru="Удобнее в мессенджере?" data-en="Prefer a messenger?">Удобнее в мессенджере?</span>
@@ -960,11 +1273,14 @@ function renderUniversalChat(notice = '') {
     ${isClosed ? renderUniversalChatRating() : renderAssistantQuickActions()}
     ${isClosed ? `<button class="button" type="button" data-chat-new-conversation data-ru="Создать новое обращение" data-en="Create new request">Создать новое обращение</button>` : `
       <form class="support-widget-reply" data-chat-reply-form>
-        <textarea name="message" maxlength="2000" required data-chat-message data-placeholder-ru="Сообщение для W1ZZYDEV" data-placeholder-en="Message for W1ZZYDEV"></textarea>
+        <textarea name="message" maxlength="2000" data-chat-message data-placeholder-ru="Сообщение для W1ZZYDEV" data-placeholder-en="Message for W1ZZYDEV"></textarea>
+        <label class="chat-file-control"><input type="file" name="attachment" data-chat-file accept="image/jpeg,image/png,image/webp,image/gif,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"><span data-ru="Прикрепить файл" data-en="Attach file">Прикрепить файл</span></label>
+        <div class="chat-file-preview hidden" data-file-preview></div>
         <button class="button primary" type="submit" data-ru="Отправить" data-en="Send">Отправить</button>
         <button class="button" type="button" data-chat-close-conversation data-ru="Завершить обращение" data-en="End request">Завершить обращение</button>
       </form>`}`;
   setLang(lang);
+  updateClientPresenceLabel();
   const replyForm = $('[data-chat-reply-form]', body);
   if (isClosed && replyForm) {
     $$('textarea,button[type="submit"]', replyForm).forEach(node => { node.disabled = true; });
@@ -984,6 +1300,8 @@ function renderUniversalChat(notice = '') {
       );
     });
   });
+  $('[data-chat-file]', replyForm)?.addEventListener('change', event => renderFilePreview(event.currentTarget));
+  $('[data-chat-message]', replyForm)?.addEventListener('input', () => markGuestTyping());
   $('[data-chat-close-conversation]', body)?.addEventListener('click', event => closeGuestConversation(event.currentTarget).catch(error => {
     console.error('[CHAT CLOSE ERROR]', {
       operation: 'guest_close_conversation',
@@ -1048,10 +1366,11 @@ function renderUniversalChatMessages() {
   container.innerHTML = universalChatState.messages.map(message => `
     <article class="${messageClass(message)}">
       <strong>${escapeHtml(chatLabel(chatSenderLabels, message.sender === 'client' ? 'client' : message.sender))}${message.pending ? ' · ...' : ''}${message.failed ? ' · ошибка' : ''}</strong>
-      <p>${escapeHtml(message.body)}</p>
+      ${renderMessageBody(message)}
       <small>${new Date(message.created_at).toLocaleString(lang === 'ru' ? 'ru-RU' : 'en-US')}</small>
     </article>`).join('') || adminEmpty(lang === 'ru' ? 'Диалог создан. Напишите первое сообщение.' : 'The dialog is ready. Send the first message.');
   container.scrollTop = container.scrollHeight;
+  hydrateVisibleAttachments().catch(() => {});
 }
 async function startUniversalChat(payload) {
   const token = createGuestToken();
@@ -1145,29 +1464,47 @@ async function sendUniversalChatMessage(formElement) {
     showChatToast(lang === 'ru' ? 'Слишком много сообщений подряд. Подождите несколько секунд.' : 'Too many messages in a row. Please wait a few seconds.', 'error', 4000);
     return;
   }
-  const body = cleanMultilineValue(new FormData(formElement).get('message'), 2000);
-  if (!body) return;
+  const formData = new FormData(formElement);
+  const body = cleanMultilineValue(formData.get('message'), 2000);
+  const file = formData.get('attachment') instanceof File && formData.get('attachment').size ? formData.get('attachment') : null;
+  if (!body && !file) return;
   const button = $('button[type="submit"]', formElement);
   const textarea = $('[data-chat-message]', formElement);
+  const fileInput = $('[data-chat-file]', formElement);
   const clientMessageId = createClientMessageId('guest');
-  const optimistic = normalizeChatMessage({ client_message_id: clientMessageId, sender: 'client', body, pending: true });
+  const optimistic = normalizeChatMessage({
+    client_message_id: clientMessageId,
+    sender: 'client',
+    body: body || (file?.name || ''),
+    attachments: file ? [{ id: `local-${clientMessageId}`, file_name: file.name, size_bytes: file.size, mime_type: file.type, kind: file.type.startsWith('image/') ? 'image' : 'document' }] : [],
+    pending: true
+  });
   button.disabled = true;
   if (textarea) textarea.dataset.failedText = body;
   try {
     upsertMessage(optimistic);
     renderUniversalChatMessages();
-    const result = await supabaseRequest('/rest/v1/rpc/chat_guest_send', {
-      method: 'POST',
-      headers: { Prefer: 'return=representation' },
-      body: JSON.stringify({ p_guest_token_hash: universalChatState.tokenHash, p_body: body, p_client_message_id: clientMessageId })
-    });
+    const result = file
+      ? await sendGuestAttachmentMessage({ file, body, clientMessageId })
+      : await supabaseRequest('/rest/v1/rpc/chat_guest_send', {
+          method: 'POST',
+          headers: { Prefer: 'return=representation' },
+          body: JSON.stringify({ p_guest_token_hash: universalChatState.tokenHash, p_body: body, p_client_message_id: clientMessageId })
+        });
     const savedMessages = (Array.isArray(result) ? result : [result]).filter(Boolean);
     savedMessages.forEach(message => upsertMessage(message));
     if (!savedMessages.some(message => message.client_message_id === clientMessageId)) {
       upsertMessage({ ...optimistic, delivery_status: 'sent', pending: false, failed: false });
     }
     formElement.reset();
+    renderFilePreview(fileInput);
     if (textarea) textarea.dataset.failedText = '';
+    universalChatState.realtimeChannel?.send?.({
+      type: 'broadcast',
+      event: 'typing',
+      payload: { actor: 'client', typing: false, conversationId: universalChatState.conversationId }
+    }).catch(() => {});
+    markGuestPresence(false).catch(() => {});
     renderUniversalChatMessages();
     const sourceMessage = savedMessages.find(message => message.client_message_id === clientMessageId);
     requestAiAssistant({ messageId: sourceMessage?.id || '', clientMessageId }).catch(error => {
@@ -1188,6 +1525,27 @@ async function sendUniversalChatMessage(formElement) {
   } finally {
     button.disabled = false;
   }
+}
+async function sendGuestAttachmentMessage({ file, body, clientMessageId }) {
+  const attachment = await uploadChatAttachment({
+    file,
+    actor: 'client',
+    conversationId: universalChatState.conversationId,
+    clientMessageId
+  });
+  return supabaseRequest('/rest/v1/rpc/chat_guest_file_message', {
+    method: 'POST',
+    headers: { Prefer: 'return=representation' },
+    body: JSON.stringify({
+      p_guest_token_hash: universalChatState.tokenHash,
+      p_body: body,
+      p_client_message_id: clientMessageId,
+      p_storage_path: attachment.storage_path,
+      p_file_name: attachment.file_name,
+      p_mime_type: attachment.mime_type,
+      p_size_bytes: attachment.size_bytes
+    })
+  });
 }
 function assistantActionQuestion(action) {
   const labels = {
@@ -1345,6 +1703,12 @@ async function startUniversalChatRealtime() {
     const client = await getSupabaseBrowserClient();
     const conversationId = universalChatState.conversationId;
     const channel = client.channel(`guest-conversation-${conversationId}`)
+      .on('broadcast', { event: 'typing' }, payload => {
+        if (payload.payload?.actor !== 'owner') return;
+        universalChatState.ownerTypingUntil = payload.payload.typing ? new Date(Date.now() + 6500).toISOString() : '';
+        updateClientPresenceLabel();
+        if (payload.payload.typing) window.setTimeout(updateClientPresenceLabel, 6800);
+      })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'messages', filter: `conversation_id=eq.${conversationId}` }, payload => {
         if (conversationId !== universalChatState.conversationId) return;
         if (payload.eventType === 'DELETE' && payload.old?.id) {
@@ -1358,9 +1722,11 @@ async function startUniversalChatRealtime() {
           if (payload.new.sender === 'owner' && !universalChatState.open && !knownIds.has(payload.new.id)) {
             universalChatState.unread += 1;
             updateChatBadge();
+            notifyChatEvent({ role: 'owner', sender: 'owner', body: payload.new.body, conversationId, target: 'client' });
           }
           chatDebug('client.realtime.message', payload.new);
           renderUniversalChatMessages();
+          if (payload.new.sender === 'owner') window.setTimeout(() => loadUniversalChatMessages().catch(() => {}), 450);
         }
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'conversations', filter: `id=eq.${conversationId}` }, payload => {
@@ -1396,6 +1762,45 @@ function startUniversalChatPolling() {
 function startUniversalChatSync() {
   startUniversalChatRealtime().catch(() => {});
   startUniversalChatPolling();
+  startGuestPresenceHeartbeat();
+}
+async function markGuestPresence(isTyping = false) {
+  if (!universalChatState.tokenHash) return null;
+  const result = await supabaseRequest('/rest/v1/rpc/chat_guest_presence', {
+    method: 'POST',
+    headers: { Prefer: 'return=representation' },
+    body: JSON.stringify({ p_guest_token_hash: universalChatState.tokenHash, p_is_typing: Boolean(isTyping) })
+  });
+  const data = Array.isArray(result) ? result[0] : result;
+  if (data) setClientPresence(data);
+  if (universalChatState.realtimeChannel?.send && isTyping) {
+    universalChatState.realtimeChannel.send({
+      type: 'broadcast',
+      event: 'typing',
+      payload: { actor: 'client', typing: true, conversationId: universalChatState.conversationId }
+    }).catch(() => {});
+  }
+  return data;
+}
+function markGuestTyping() {
+  window.clearTimeout(universalChatState.typingTimer);
+  markGuestPresence(true).catch(() => {});
+  universalChatState.typingTimer = window.setTimeout(() => {
+    universalChatState.realtimeChannel?.send?.({
+      type: 'broadcast',
+      event: 'typing',
+      payload: { actor: 'client', typing: false, conversationId: universalChatState.conversationId }
+    }).catch(() => {});
+    markGuestPresence(false).catch(() => {});
+  }, 2200);
+}
+function startGuestPresenceHeartbeat() {
+  window.clearInterval(universalChatState.presenceTimer);
+  if (!universalChatState.tokenHash) return;
+  markGuestPresence(false).catch(() => {});
+  universalChatState.presenceTimer = window.setInterval(() => {
+    if (document.visibilityState === 'visible' && universalChatState.tokenHash) markGuestPresence(false).catch(() => {});
+  }, 25000);
 }
 async function attachLeadToUniversalChat(details) {
   openUniversalChat({ category: 'project', notice: lang === 'ru' ? 'Заявка принята. Продолжим обсуждение здесь.' : 'Request accepted. We can continue here.' });
@@ -2044,6 +2449,10 @@ const adminChatState = {
   knownClientMessageIds: new Set(),
   notificationSoundReady: false,
   notificationAudioContext: null,
+  clientLastSeenAt: '',
+  clientTypingUntil: '',
+  presenceTimer: 0,
+  typingTimer: 0,
   lastSyncAt: '',
   lastMessageId: '',
   syncMode: 'connecting',
@@ -2316,6 +2725,56 @@ function scrollAdminMessages() {
   const container = $('#dialog-messages');
   if (container) container.scrollTop = container.scrollHeight;
 }
+function updateAdminPresenceLabel() {
+  const node = $('#dialog-presence');
+  if (!node) return;
+  node.textContent = adminChatState.activeConversationId
+    ? formatPresenceLabel(adminChatState.clientLastSeenAt, adminChatState.clientTypingUntil)
+    : adminText('Статус появится после выбора диалога', 'Status appears after choosing a dialog');
+}
+function setAdminPresence(data = {}) {
+  adminChatState.clientLastSeenAt = data.client_last_seen_at || adminChatState.clientLastSeenAt || '';
+  adminChatState.clientTypingUntil = data.client_typing_until || adminChatState.clientTypingUntil || '';
+  updateAdminPresenceLabel();
+}
+async function markOwnerPresence(isTyping = false) {
+  if (!adminChatState.activeConversationId) return null;
+  const result = await adminSupabase('admin.chat.presence', '/rest/v1/rpc/chat_owner_presence', {
+    method: 'POST',
+    headers: { Prefer: 'return=representation' },
+    body: JSON.stringify({ p_conversation_id: adminChatState.activeConversationId, p_is_typing: Boolean(isTyping) })
+  }, { conversation_id: adminChatState.activeConversationId });
+  const data = Array.isArray(result) ? result[0] : result;
+  if (data) setAdminPresence(data);
+  if (adminChatState.realtimeChannel?.send && isTyping) {
+    adminChatState.realtimeChannel.send({
+      type: 'broadcast',
+      event: 'typing',
+      payload: { actor: 'owner', typing: true, conversationId: adminChatState.activeConversationId }
+    }).catch(() => {});
+  }
+  return data;
+}
+function markOwnerTyping() {
+  window.clearTimeout(adminChatState.typingTimer);
+  markOwnerPresence(true).catch(() => {});
+  adminChatState.typingTimer = window.setTimeout(() => {
+    adminChatState.realtimeChannel?.send?.({
+      type: 'broadcast',
+      event: 'typing',
+      payload: { actor: 'owner', typing: false, conversationId: adminChatState.activeConversationId }
+    }).catch(() => {});
+    markOwnerPresence(false).catch(() => {});
+  }, 2200);
+}
+function startOwnerPresenceHeartbeat() {
+  window.clearInterval(adminChatState.presenceTimer);
+  if (!adminChatState.activeConversationId) return;
+  markOwnerPresence(false).catch(() => {});
+  adminChatState.presenceTimer = window.setInterval(() => {
+    if (document.visibilityState === 'visible' && adminChatState.activeConversationId) markOwnerPresence(false).catch(() => {});
+  }, 25000);
+}
 
 function renderAdminMessageHistory() {
   const container = $('#dialog-messages');
@@ -2329,12 +2788,13 @@ function renderAdminMessageHistory() {
   container.innerHTML = activeAdminMessages().map(message => `
     <article class="${messageClass(message)}">
       <strong>${escapeHtml(chatLabel(chatSenderLabels, message.sender))}${message.pending ? ' · отправка...' : ''}${message.failed ? ' · ошибка' : ''}</strong>
-      <p>${escapeHtml(message.body)}</p>
+      ${renderMessageBody(message)}
       ${message.failed ? `<div class="admin-actions"><button class="button small" type="button" data-retry-owner-message="${escapeHtml(message.client_message_id)}">${adminText('Повторить', 'Retry')}</button><button class="button small delete-review" type="button" data-remove-local-message="${escapeHtml(message.client_message_id)}">${adminText('Удалить локально', 'Remove locally')}</button></div>` : ''}
       ${message.error_message ? `<small>${escapeHtml(message.error_message)}</small>` : ''}
       <small>${new Date(message.created_at).toLocaleString('ru-RU')}</small>
     </article>
   `).join('') || adminEmpty(adminText('Сообщений пока нет.', 'There are no messages yet.'));
+  hydrateVisibleAttachments().catch(() => {});
   const form = $('#dialog-reply-form');
   if (form) {
     const isLocked = conversation?.status === 'closed' || Boolean(conversation?.archived_at);
@@ -2368,6 +2828,8 @@ function renderAdminDialogActions() {
 
 function stopAdminChatSync() {
   window.clearTimeout(adminChatState.pollingTimer);
+  window.clearInterval(adminChatState.presenceTimer);
+  window.clearTimeout(adminChatState.typingTimer);
   adminChatState.pollingTimer = null;
   if (adminChatState.realtimeChannel?.unsubscribe) {
     adminChatState.realtimeChannel.unsubscribe();
@@ -2444,6 +2906,12 @@ async function startAdminRealtime(conversationId) {
     if (!client || !session?.access_token) throw new Error('OWNER session is unavailable for Realtime');
     await client.realtime?.setAuth?.(session.access_token);
     const channel = client.channel(`owner-conversation-${conversationId}`)
+      .on('broadcast', { event: 'typing' }, payload => {
+        if (payload.payload?.actor !== 'client') return;
+        adminChatState.clientTypingUntil = payload.payload.typing ? new Date(Date.now() + 6500).toISOString() : '';
+        updateAdminPresenceLabel();
+        if (payload.payload.typing) window.setTimeout(updateAdminPresenceLabel, 6800);
+      })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'messages', filter: `conversation_id=eq.${conversationId}` }, payload => {
         if (conversationId !== adminChatState.activeConversationId) return;
         if (payload.eventType === 'DELETE' && payload.old?.id) {
@@ -2456,6 +2924,7 @@ async function startAdminRealtime(conversationId) {
           const result = adminUpsertMessage(payload.new, { silent: true });
           if (result.changed) renderAdminMessageHistory();
           renderAdminDialogs();
+          if (payload.new.sender === 'client') window.setTimeout(() => pollAdminChat({ generation: adminChatState.requestGeneration }).catch(() => {}), 450);
         }
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'conversations', filter: `id=eq.${conversationId}` }, payload => {
@@ -2519,6 +2988,7 @@ async function startAdminGlobalNotifications() {
         if (!payload.new || payload.new.sender !== 'client') return;
         const result = adminUpsertMessage(payload.new);
         if (result.changed && payload.new.conversation_id === adminChatState.activeConversationId) renderAdminMessageHistory();
+        if (result.changed) notifyChatEvent({ role: 'client', sender: 'client', body: payload.new.body, conversationId: payload.new.conversation_id, target: 'admin' });
         renderAdminDashboard();
         renderAdminDialogs();
       })
@@ -2737,6 +3207,8 @@ async function loadDialogMessages(conversationId) {
   adminChatState.requestGeneration = generation;
   adminState.selectedConversationId = conversationId;
   adminChatState.activeConversationId = conversationId;
+  adminChatState.clientLastSeenAt = '';
+  adminChatState.clientTypingUntil = '';
   setAdminMessages(conversationId, [], { silent: true });
   adminChatState.lastSyncAt = '';
   adminChatState.lastMessageId = '';
@@ -2747,6 +3219,7 @@ async function loadDialogMessages(conversationId) {
   const messagesContainer = $('#dialog-messages');
   const conversation = activeAdminConversation();
   if (title) title.textContent = conversation?.subject || `Диалог ${conversationId.slice(0, 8)}`;
+  updateAdminPresenceLabel();
   renderAdminDialogActions();
   if (messagesContainer) messagesContainer.innerHTML = adminEmpty(adminText('Загрузка сообщений...', 'Loading messages...'));
   const messages = await adminSupabase('admin.chat.loadMessages', '/rest/v1/rpc/chat_owner_messages', {
@@ -2767,6 +3240,8 @@ async function loadDialogMessages(conversationId) {
   renderAdminDialogActions();
   renderAdminMessageHistory();
   await startAdminChatSync(conversationId);
+  startOwnerPresenceHeartbeat();
+  resetChatNotifications();
 }
 
 function requestedAdminConversationId() {
@@ -2911,6 +3386,7 @@ moderationList?.addEventListener('click', async event => {
 
 $$('.admin-tab').forEach(tab => tab.addEventListener('click', () => {
   adminChatState.notificationSoundReady = true;
+  if ('Notification' in window && Notification.permission === 'default') Notification.requestPermission().catch(() => {});
   ensureAdminNotificationSound();
   $$('.admin-tab').forEach(item => item.classList.remove('active'));
   $$('.admin-view').forEach(item => item.classList.remove('active'));
@@ -3010,7 +3486,7 @@ $('#admin-dialogs')?.addEventListener('change', async event => {
   }
 });
 
-async function sendOwnerChatMessage({ body, clientMessageId = createClientMessageId('owner'), formElement = null, textarea = null }) {
+async function sendOwnerChatMessage({ body, file = null, clientMessageId = createClientMessageId('owner'), formElement = null, textarea = null }) {
   const conversationId = adminChatState.activeConversationId;
   if (!conversationId || adminChatState.sendingMessageIds.has(clientMessageId)) return null;
   const optimistic = normalizeChatMessage({
@@ -3019,7 +3495,8 @@ async function sendOwnerChatMessage({ body, clientMessageId = createClientMessag
     client_message_id: clientMessageId,
     sender: 'owner',
     sender_role: 'owner',
-    body,
+    body: body || (file?.name || ''),
+    attachments: file ? [{ id: `local-${clientMessageId}`, file_name: file.name, size_bytes: file.size, mime_type: file.type, kind: file.type.startsWith('image/') ? 'image' : 'document' }] : [],
     delivery_status: 'sending',
     pending: true
   });
@@ -3027,19 +3504,28 @@ async function sendOwnerChatMessage({ body, clientMessageId = createClientMessag
   adminUpsertMessage(optimistic);
   renderAdminMessageHistory();
   try {
-    const result = await adminSupabase('admin.chat.ownerSend', '/rest/v1/rpc/chat_owner_send', {
-      method: 'POST',
-      headers: { Prefer: 'return=representation' },
-      body: JSON.stringify({
-        p_conversation_id: conversationId,
-        p_body: body,
-        p_client_message_id: clientMessageId
-      })
-    }, { conversation_id: conversationId, client_message_id: clientMessageId });
+    const result = file
+      ? await sendOwnerAttachmentMessage({ file, body, clientMessageId, conversationId })
+      : await adminSupabase('admin.chat.ownerSend', '/rest/v1/rpc/chat_owner_send', {
+          method: 'POST',
+          headers: { Prefer: 'return=representation' },
+          body: JSON.stringify({
+            p_conversation_id: conversationId,
+            p_body: body,
+            p_client_message_id: clientMessageId
+          })
+        }, { conversation_id: conversationId, client_message_id: clientMessageId });
     (Array.isArray(result) ? result : [result]).filter(Boolean).forEach(message => adminUpsertMessage(message));
     adminUpsertConversation({ id: conversationId, assistant_mode: 'suggest', status: 'waiting_client', updated_at: new Date().toISOString() });
     if (formElement) formElement.reset();
+    renderFilePreview(formElement?.querySelector('[data-admin-chat-file]'));
     if (textarea) textarea.value = '';
+    adminChatState.realtimeChannel?.send?.({
+      type: 'broadcast',
+      event: 'typing',
+      payload: { actor: 'owner', typing: false, conversationId }
+    }).catch(() => {});
+    markOwnerPresence(false).catch(() => {});
     renderAdminMessageHistory();
     await fetchAdminConversations().catch(() => {});
     setAdminMessage(adminText('Сообщение отправлено от имени W1ZZYDEV.', 'Message sent as W1ZZYDEV.'));
@@ -3069,20 +3555,42 @@ async function sendOwnerChatMessage({ body, clientMessageId = createClientMessag
     adminChatState.sendingMessageIds.delete(clientMessageId);
   }
 }
+async function sendOwnerAttachmentMessage({ file, body, clientMessageId, conversationId }) {
+  const attachment = await uploadChatAttachment({
+    file,
+    actor: 'owner',
+    conversationId,
+    clientMessageId
+  });
+  return adminSupabase('admin.chat.ownerFileSend', '/rest/v1/rpc/chat_owner_file_message', {
+    method: 'POST',
+    headers: { Prefer: 'return=representation' },
+    body: JSON.stringify({
+      p_conversation_id: conversationId,
+      p_body: body,
+      p_client_message_id: clientMessageId,
+      p_storage_path: attachment.storage_path,
+      p_file_name: attachment.file_name,
+      p_mime_type: attachment.mime_type,
+      p_size_bytes: attachment.size_bytes
+    })
+  }, { conversation_id: conversationId, client_message_id: clientMessageId });
+}
 
 $('#dialog-reply-form')?.addEventListener('submit', async event => {
   event.preventDefault();
   if (!adminChatState.activeConversationId || adminChatState.sending) return;
   const formData = new FormData(event.currentTarget);
   const body = cleanMultilineValue(formData.get('message'), 2000);
-  if (!body) return;
+  const file = formData.get('attachment') instanceof File && formData.get('attachment').size ? formData.get('attachment') : null;
+  if (!body && !file) return;
   const button = $('button[type="submit"]', event.currentTarget);
   const textarea = $('textarea[name="message"]', event.currentTarget);
   const clientMessageId = createClientMessageId('owner');
   adminChatState.sending = true;
   if (button) button.disabled = true;
   try {
-    await sendOwnerChatMessage({ body, clientMessageId, formElement: event.currentTarget, textarea });
+    await sendOwnerChatMessage({ body, file, clientMessageId, formElement: event.currentTarget, textarea });
   } catch (error) {
     // sendOwnerChatMessage keeps the failed card in history and restores textarea text.
   } finally {
@@ -3090,6 +3598,8 @@ $('#dialog-reply-form')?.addEventListener('submit', async event => {
     if (button) button.disabled = false;
   }
 });
+$('[data-admin-chat-file]')?.addEventListener('change', event => renderFilePreview(event.currentTarget));
+$('textarea[name="message"]', $('#dialog-reply-form'))?.addEventListener('input', () => markOwnerTyping());
 
 $('#dialog-messages')?.addEventListener('click', async event => {
   const retryButton = event.target.closest('[data-retry-owner-message]');
@@ -3234,16 +3744,27 @@ $('#dialog-actions')?.addEventListener('change', async event => {
 
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'visible' && universalChatState.tokenHash) {
+    resetChatNotifications();
     startUniversalChatRealtime().catch(() => {});
     loadUniversalChatMessages().catch(() => {});
+    markGuestPresence(false).catch(() => {});
   }
   if (document.visibilityState === 'visible' && adminChatState.activeConversationId) {
+    resetChatNotifications();
     pollAdminChat({ generation: adminChatState.requestGeneration }).catch(() => {});
     scheduleAdminPolling(adminChatState.requestGeneration, 2000);
+    markOwnerPresence(false).catch(() => {});
   }
   if (document.visibilityState === 'visible' && moderationPanel && !moderationPanel.classList.contains('hidden')) {
     fetchAdminConversations().catch(() => {});
   }
+});
+
+document.addEventListener('click', event => {
+  const attachment = event.target.closest('.chat-attachment.image');
+  if (!attachment) return;
+  const image = $('img', attachment);
+  if (image?.src) openAttachmentLightbox(image.src, image.alt || '');
 });
 
 const observer = 'IntersectionObserver' in window ? new IntersectionObserver(entries => entries.forEach(entry => {
