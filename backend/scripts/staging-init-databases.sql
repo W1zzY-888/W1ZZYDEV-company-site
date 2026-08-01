@@ -1,0 +1,2 @@
+CREATE DATABASE w1zzydev_ru_staging;
+CREATE DATABASE w1zzydev_international_staging;

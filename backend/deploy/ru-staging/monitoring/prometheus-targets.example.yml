@@ -1,0 +1,6 @@
+- targets:
+    - ru-api-staging.example.com
+  labels:
+    service: w1zzydev-ru-backend
+    region: RU
+    environment: staging

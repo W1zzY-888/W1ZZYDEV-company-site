@@ -1,0 +1,16 @@
+[Unit]
+Description=W1ZZYDEV RU Staging Docker Compose
+Requires=docker.service
+After=docker.service network-online.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+WorkingDirectory=/opt/w1zzydev/backend/deploy/ru-staging
+ExecStart=/usr/bin/docker compose up -d ru-postgres ru-backend reverse-proxy
+ExecStop=/usr/bin/docker compose down
+TimeoutStartSec=120
+TimeoutStopSec=60
+
+[Install]
+WantedBy=multi-user.target

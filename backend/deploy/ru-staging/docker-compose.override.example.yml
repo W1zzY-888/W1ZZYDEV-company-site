@@ -1,0 +1,9 @@
+services:
+  reverse-proxy:
+    ports:
+      - "8088:80"
+      - "8443:443"
+
+  ru-backend:
+    environment:
+      CORS_ALLOWED_ORIGINS: "https://ru-api-staging.example.com"

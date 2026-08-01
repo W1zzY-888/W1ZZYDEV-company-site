@@ -6,6 +6,145 @@ const resetHorizontalScroll = () => {
 window.addEventListener('scroll', resetHorizontalScroll, { passive: true });
 window.addEventListener('resize', resetHorizontalScroll);
 window.addEventListener('orientationchange', () => window.setTimeout(resetHorizontalScroll, 120));
+const cookieConsentVersion = '1';
+const cookieConsentKey = 'w1zzydev-cookie-consent-v1';
+const functionalStorageKeys = ['w1zzy-lang', 'w1zzydev-theme-v2'];
+let cookieSettingsCloseHandler = null;
+const cookieConsentCopy = Object.freeze({
+  title: {
+    ru: 'Настройки хранения данных',
+    en: 'Data Storage Settings'
+  },
+  description: {
+    ru: 'Мы используем необходимые технологии хранения для безопасности, активных форм, сессий чата, авторизации и сохранения вашего выбора согласия. Функциональные хранилища сохраняют язык и тему между посещениями. Аналитика и маркетинг на сайте сейчас не используются.',
+    en: 'We use essential storage technologies for security, active forms, chat sessions, authentication, and saving your consent choice. Functional storage saves language and theme between visits. Analytics and marketing are not currently used on the site.'
+  },
+  essential: {
+    title: { ru: 'Необходимые', en: 'Essential' },
+    description: {
+      ru: 'Всегда включены: безопасность, отправленные пользователем формы, активные сессии чата или авторизации и сохранение вашего выбора согласия.',
+      en: 'Always enabled: security, user-submitted forms, active chat or authentication sessions, and saving your consent choice.'
+    }
+  },
+  functional: {
+    title: { ru: 'Функциональные', en: 'Functional' },
+    description: {
+      ru: 'Сохраняют ваши настройки языка и темы между посещениями.',
+      en: 'Saves your language and theme preferences between visits.'
+    }
+  },
+  analytics: {
+    title: { ru: 'Аналитические', en: 'Analytics' },
+    description: {
+      ru: 'Не используется.',
+      en: 'Not in use.'
+    }
+  },
+  marketing: {
+    title: { ru: 'Маркетинговые', en: 'Marketing' },
+    description: {
+      ru: 'Не используется.',
+      en: 'Not in use.'
+    }
+  },
+  saveSelected: { ru: 'Сохранить выбранное', en: 'Save selected' },
+  rejectOptional: { ru: 'Отклонить необязательные', en: 'Reject optional' },
+  acceptAll: { ru: 'Принять все доступные', en: 'Accept all available' },
+  storagePolicy: { ru: 'Политика cookie', en: 'Cookie Policy' },
+  footerSettings: { ru: 'Настройки cookie', en: 'Cookie Settings' },
+  saved: { ru: 'Настройки сохранены.', en: 'Your storage preferences have been saved.' }
+});
+
+function safeParseJson(value) {
+  if (!value) return null;
+  try {
+    const parsed = JSON.parse(value);
+    return parsed && Object.getPrototypeOf(parsed) === Object.prototype ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+function readCookieConsent() {
+  const stored = safeParseJson(localStorage.getItem(cookieConsentKey));
+  if (!stored || stored.version !== cookieConsentVersion || stored.necessary !== true) return null;
+  return {
+    version: cookieConsentVersion,
+    necessary: true,
+    functional: stored.functional === true,
+    analytics: stored.analytics === true,
+    marketing: stored.marketing === true,
+    updatedAt: typeof stored.updatedAt === 'string' ? stored.updatedAt : ''
+  };
+}
+
+function hasCookieConsent(category) {
+  const consent = readCookieConsent();
+  return category === 'necessary' ? true : consent?.[category] === true;
+}
+
+function getFunctionalStorageValue(key, fallback = '') {
+  if (hasCookieConsent('functional')) return localStorage.getItem(key) || sessionStorage.getItem(key) || fallback;
+  return sessionStorage.getItem(key) || fallback;
+}
+
+function setFunctionalStorageValue(key, value) {
+  if (hasCookieConsent('functional')) {
+    localStorage.setItem(key, value);
+    sessionStorage.removeItem(key);
+  } else {
+    sessionStorage.setItem(key, value);
+    localStorage.removeItem(key);
+  }
+}
+
+function clearOptionalStorage() {
+  functionalStorageKeys.forEach(key => {
+    localStorage.removeItem(key);
+    sessionStorage.removeItem(key);
+  });
+}
+
+function saveCookieConsent(preferences) {
+  const next = {
+    version: cookieConsentVersion,
+    necessary: true,
+    functional: preferences.functional === true,
+    analytics: preferences.analytics === true,
+    marketing: preferences.marketing === true,
+    updatedAt: new Date().toISOString()
+  };
+  localStorage.setItem(cookieConsentKey, JSON.stringify(next));
+  if (!next.functional) clearOptionalStorage();
+  return next;
+}
+
+function removeCookieConsentDialog() {
+  cookieSettingsCloseHandler?.();
+  cookieSettingsCloseHandler = null;
+  document.body.classList.remove('cookie-consent-open');
+  document.body.style.removeProperty('overflow');
+  $('.cookie-consent-backdrop')?.remove();
+}
+
+function localized(copy) {
+  return copy?.[lang] || copy?.ru || '';
+}
+
+function setLocalizedText(element, copy) {
+  if (!element) return;
+  element.dataset.ru = copy.ru;
+  element.dataset.en = copy.en;
+  element.textContent = localized(copy);
+}
+
+function refreshCookieConsentTexts(root = document) {
+  $$('[data-cookie-i18n]', root).forEach(element => {
+    const key = element.dataset.cookieI18n;
+    const copy = key.split('.').reduce((value, part) => value?.[part], cookieConsentCopy);
+    if (copy?.ru && copy?.en) setLocalizedText(element, copy);
+  });
+}
 const path = location.pathname.replace(/\/index\.html$/, '/');
 const navKey = path.includes('/services') ? 'services' : path.includes('/projects') ? 'projects' : path.includes('/pricing') ? 'pricing' : path.includes('/about') ? 'about' : path.includes('/reviews') ? 'reviews' : path.includes('/contact') ? 'contact' : path.includes('/support') ? 'support' : path.includes('/client') ? 'client' : 'home';
 $$('.desktop-nav,.mobile-panel').forEach(nav => {
@@ -141,7 +280,7 @@ if (contactFormForParameters) {
   if (typeSelect && !Array.from(typeSelect.options).some(option => option.value === 'support' || option.textContent.includes('Technical Support'))) {
     const supportOption = document.createElement('option');
     supportOption.value = 'support';
-    supportOption.textContent = localStorage.getItem('w1zzy-lang') === 'en' ? 'Support & Improvement' : 'Поддержка и доработка';
+    supportOption.textContent = getFunctionalStorageValue('w1zzy-lang', 'ru') === 'en' ? 'Support & Improvement' : 'Поддержка и доработка';
     typeSelect.appendChild(supportOption);
   }
   if (typeSelect && Number.isInteger(requestedIndex)) typeSelect.selectedIndex = requestedIndex;
@@ -216,7 +355,8 @@ displayActions.innerHTML = '<button class="theme-button" type="button" aria-labe
 oldLangButton?.replaceWith(displayActions);
 const langButtons = $$('[data-language]');
 const themeButton = $('.theme-button');
-let lang = localStorage.getItem('w1zzy-lang') || 'ru';
+let lang = getFunctionalStorageValue('w1zzy-lang', document.documentElement.lang === 'en' ? 'en' : 'ru') || 'ru';
+let chatLocaleSyncReady = false;
 const pricingValues = [
   { rub: '45 000 ₽', usd: '$600' },
   { rub: '90 000 ₽', usd: '$1,200' },
@@ -270,7 +410,9 @@ function setLang(next) {
   const description = document.body.dataset[`description${lang === 'ru' ? 'Ru' : 'En'}`];
   if (title) document.title = title;
   if (description) $('meta[name="description"]')?.setAttribute('content', description);
-  localStorage.setItem('w1zzy-lang', lang);
+  refreshCookieConsentTexts();
+  if (chatLocaleSyncReady && typeof syncEmptyChatLocaleWithInterface === 'function') syncEmptyChatLocaleWithInterface();
+  setFunctionalStorageValue('w1zzy-lang', lang);
 }
 langButtons.forEach(button => button.addEventListener('click', () => setLang(button.dataset.language)));
 setLang(lang);
@@ -280,9 +422,9 @@ function setTheme(theme) {
   document.body.dataset.theme = nextTheme;
   themeButton?.setAttribute('aria-pressed', String(nextTheme === 'light'));
   themeButton?.setAttribute('aria-label', nextTheme === 'light' ? 'Включить тёмную тему' : 'Включить светлую тему');
-  localStorage.setItem('w1zzydev-theme-v2', nextTheme);
+  setFunctionalStorageValue('w1zzydev-theme-v2', nextTheme);
 }
-setTheme(localStorage.getItem('w1zzydev-theme-v2') || 'dark');
+setTheme(getFunctionalStorageValue('w1zzydev-theme-v2', window.matchMedia?.('(prefers-color-scheme: light)').matches ? 'light' : 'dark'));
 themeButton?.addEventListener('click', () => setTheme(document.body.dataset.theme === 'light' ? 'dark' : 'light'));
 
 $$('.filter').forEach(button => button.addEventListener('click', () => {
@@ -293,6 +435,255 @@ $$('.filter').forEach(button => button.addEventListener('click', () => {
 }));
 
 const rateLimitWindow = 30000;
+const legalConfig = window.W1ZZYDEV_LEGAL_CONFIG || {};
+const legalDocuments = [
+  ['/legal/privacy/', 'Политика обработки персональных данных', 'Privacy Policy'],
+  ['/legal/personal-data-consent/', 'Согласие на обработку персональных данных', 'Personal Data Consent'],
+  ['/legal/cookies/', 'Политика cookie', 'Cookie Policy'],
+  ['/legal/terms/', 'Пользовательское соглашение', 'Terms'],
+  ['/legal/data-request/', 'Запрос по персональным данным', 'Data Request'],
+  ['/legal/', 'Юридическая информация', 'Legal Information']
+];
+function legalText(ru, en) {
+  return lang === 'en' ? en : ru;
+}
+function countrySelectorHtml(formId) {
+  const inputId = `${formId || 'w1zzy-form'}-service-country`;
+  return `<div class="field data-route-country-field" data-country-selector>
+    <label for="${inputId}" data-ru="Страна" data-en="Country">${legalText('Страна', 'Country')}</label>
+    <select id="${inputId}" name="service_country" required aria-required="true">
+      <option value="" data-ru="Выберите страну" data-en="Select country">${legalText('Выберите страну', 'Select country')}</option>
+      <option value="RU" data-ru="Россия" data-en="Russia">${legalText('Россия', 'Russia')}</option>
+      <option value="US" data-ru="США" data-en="United States">${legalText('США', 'United States')}</option>
+      <option value="OTHER" data-ru="Другая страна" data-en="Other">${legalText('Другая страна', 'Other')}</option>
+    </select>
+  </div>`;
+}
+function ensureCountrySelector(formElement) {
+  if (!formElement || formElement.dataset.countrySelectorReady === 'true') return;
+  const formId = formElement.id || 'w1zzy-form';
+  const wrapper = document.createElement('div');
+  wrapper.innerHTML = countrySelectorHtml(formId);
+  const control = wrapper.firstElementChild;
+  const legalControl = $('.legal-consent-control', formElement);
+  const submit = $('button[type="submit"]', formElement);
+  if (legalControl) legalControl.before(control);
+  else if (submit) submit.before(control);
+  else formElement.appendChild(control);
+  formElement.dataset.countrySelectorReady = 'true';
+}
+function ensureCountrySelectors(root = document) {
+  const formIds = ['project-form', 'home-project-form', 'support-ticket-form', 'review-form', 'client-login-form', 'data-request-form'];
+  formIds.forEach(formId => ensureCountrySelector($(`#${formId}`, root)));
+  $$('[data-chat-start-form]', root).forEach(formElement => ensureCountrySelector(formElement));
+}
+function validateCountrySelection(formElement, statusElement) {
+  const select = $('[name="service_country"]', formElement);
+  if (!select || select.value) return true;
+  setFormStatus(statusElement || $('.form-status,[data-chat-status]', formElement), legalText('Выберите страну обращения перед отправкой формы.', 'Select the request country before submitting the form.'), 'error');
+  select.focus();
+  return false;
+}
+function legalConsentLabel(formId) {
+  const isReview = formId === 'review-form';
+  const ru = isReview
+    ? 'Я даю согласие на обработку персональных данных и отдельное согласие на публикацию отзыва после модерации.'
+    : 'Я даю согласие на обработку персональных данных и принимаю Политику обработки персональных данных.';
+  const en = isReview
+    ? 'I consent to personal data processing and separately consent to publication of the review after moderation.'
+    : 'I consent to the processing of my personal data and accept the Privacy Policy.';
+  return legalText(ru, en);
+}
+function legalLinksHtml() {
+  return `<a href="/legal/personal-data-consent/" target="_blank" rel="noopener noreferrer">${legalText('Согласие', 'Consent')}</a> · <a href="/legal/privacy/" target="_blank" rel="noopener noreferrer">${legalText('Политика', 'Privacy Policy')}</a>`;
+}
+function ensureLegalConsentControl(formElement) {
+  if (!formElement || formElement.dataset.legalConsentReady === 'true') return;
+  const formId = formElement.id || 'w1zzy-form';
+  const submit = $('button[type="submit"]', formElement);
+  const control = document.createElement('div');
+  const inputId = `${formId}-pd-consent`;
+  const hintId = `${formId}-pd-consent-hint`;
+  control.className = 'legal-consent-control';
+  control.innerHTML = `<label for="${inputId}"><input id="${inputId}" name="pd_consent" value="accepted" type="checkbox" required aria-describedby="${hintId}"><span>${legalConsentLabel(formId)}</span></label><small id="${hintId}">${legalLinksHtml()}</small>`;
+  submit?.before(control);
+  formElement.dataset.legalConsentReady = 'true';
+}
+function ensureLegalFormConsents(root = document) {
+  ensureCountrySelectors(root);
+  Object.keys(legalConfig.LEGAL_FORMS || {}).forEach(formId => ensureLegalConsentControl($(`#${formId}`, root)));
+  $$('[data-chat-start-form]', root).forEach(formElement => ensureLegalConsentControl(formElement));
+}
+function validateLegalConsent(formElement, statusElement) {
+  const checkbox = $('input[name="pd_consent"]', formElement);
+  if (!checkbox || checkbox.checked) return true;
+  setFormStatus(statusElement || $('.form-status,[data-chat-status]', formElement), legalText('Нужно принять согласие на обработку персональных данных.', 'Please accept the personal data processing consent.'), 'error');
+  checkbox.focus();
+  return false;
+}
+function addLegalFooterLinks() {
+  $$('.footer').forEach(footer => {
+    const container = $('.container', footer);
+    if (!container || $('.footer-legal-links', footer)) return;
+    const block = document.createElement('nav');
+    block.className = 'footer-legal-links';
+    block.setAttribute('aria-label', 'Legal documents');
+    block.innerHTML = legalDocuments.map(([href, ru, en]) => `<a href="${href}" data-ru="${ru}" data-en="${en}">${legalText(ru, en)}</a>`).join('');
+    const cookieButton = document.createElement('button');
+    cookieButton.className = 'footer-cookie-settings';
+    cookieButton.type = 'button';
+    cookieButton.dataset.cookieI18n = 'footerSettings';
+    setLocalizedText(cookieButton, cookieConsentCopy.footerSettings);
+    cookieButton.addEventListener('click', () => window.W1ZZYDEV_OPEN_COOKIE_SETTINGS?.({ userInitiated: true }));
+    block.appendChild(cookieButton);
+    const bottom = $('.footer-bottom', footer);
+    if (bottom) container.insertBefore(block, bottom);
+    else container.appendChild(block);
+  });
+}
+function reportMissingLegalData() {
+  const isLocal = ['localhost', '127.0.0.1', ''].includes(location.hostname);
+  if (!isLocal) return;
+  const missing = legalConfig.missingRequiredForOwnerReview || [];
+  if (!missing.length) return;
+  console.warn('[W1ZZYDEV LEGAL] Missing legal/operator data before legal release:', missing);
+  document.documentElement.dataset.legalMissingData = missing.join(',');
+}
+function applyCookieConsentUi() {
+  window.W1ZZYDEV_OPEN_COOKIE_SETTINGS = ({ userInitiated = false } = {}) => {
+    removeCookieConsentDialog();
+    const stored = readCookieConsent();
+    const previousFocus = document.activeElement;
+    const backdrop = document.createElement('div');
+    backdrop.className = 'cookie-consent-backdrop';
+    const panel = document.createElement('section');
+    panel.className = 'cookie-consent-panel';
+    panel.setAttribute('role', 'dialog');
+    panel.setAttribute('aria-modal', 'true');
+    panel.setAttribute('aria-labelledby', 'cookie-consent-title');
+    panel.setAttribute('aria-describedby', 'cookie-consent-description');
+    panel.tabIndex = -1;
+    document.body.classList.add('cookie-consent-open');
+    document.body.style.overflow = 'hidden';
+
+    const title = document.createElement('h2');
+    title.id = 'cookie-consent-title';
+    title.dataset.cookieI18n = 'title';
+    setLocalizedText(title, cookieConsentCopy.title);
+    const description = document.createElement('p');
+    description.id = 'cookie-consent-description';
+    description.dataset.cookieI18n = 'description';
+    setLocalizedText(description, cookieConsentCopy.description);
+
+    const form = document.createElement('div');
+    form.className = 'cookie-consent-options';
+    const necessary = createCookieOption('necessary', cookieConsentCopy.essential, true, true, 'essential');
+    const functional = createCookieOption('functional', cookieConsentCopy.functional, stored?.functional === true, false, 'functional');
+    const analytics = createCookieOption('analytics', cookieConsentCopy.analytics, false, true, 'analytics');
+    const marketing = createCookieOption('marketing', cookieConsentCopy.marketing, false, true, 'marketing');
+    form.append(necessary.wrap, functional.wrap, analytics.wrap, marketing.wrap);
+
+    const status = document.createElement('p');
+    status.className = 'cookie-consent-status';
+    status.setAttribute('role', 'status');
+    status.setAttribute('aria-live', 'polite');
+
+    const actions = document.createElement('div');
+    actions.className = 'cookie-actions';
+    const saveSelected = cookieActionButton('primary', cookieConsentCopy.saveSelected);
+    const rejectOptional = cookieActionButton('', cookieConsentCopy.rejectOptional);
+    const acceptAll = cookieActionButton('', cookieConsentCopy.acceptAll);
+    const policy = document.createElement('a');
+    policy.className = 'button';
+    policy.href = '/legal/cookies/';
+    policy.dataset.cookieI18n = 'storagePolicy';
+    setLocalizedText(policy, cookieConsentCopy.storagePolicy);
+    actions.append(saveSelected, rejectOptional, acceptAll, policy);
+
+    const save = prefs => {
+      const before = readCookieConsent();
+      const after = saveCookieConsent(prefs);
+      if (before?.functional === true && after.functional !== true) clearOptionalStorage();
+      setLocalizedText(status, cookieConsentCopy.saved);
+      window.setTimeout(() => {
+        removeCookieConsentDialog();
+        if (previousFocus && document.contains(previousFocus)) previousFocus.focus();
+      }, userInitiated ? 700 : 350);
+    };
+
+    saveSelected.addEventListener('click', () => save({ functional: functional.input.checked, analytics: analytics.input.checked, marketing: marketing.input.checked }));
+    rejectOptional.addEventListener('click', () => save({ functional: false, analytics: false, marketing: false }));
+    acceptAll.addEventListener('click', () => save({ functional: true, analytics: false, marketing: false }));
+
+    panel.append(title, description, form, actions, status);
+    backdrop.appendChild(panel);
+    document.body.appendChild(backdrop);
+
+    const focusable = () => $$('button,[href],input,select,textarea,[tabindex]:not([tabindex="-1"])', panel).filter(element => !element.disabled);
+    const trap = event => {
+      if (event.key === 'Escape') {
+        removeCookieConsentDialog();
+        if (previousFocus && document.contains(previousFocus)) previousFocus.focus();
+        return;
+      }
+      if (event.key !== 'Tab') return;
+      const items = focusable();
+      const first = items[0];
+      const last = items.at(-1);
+      if (!first || !last) return;
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+    document.addEventListener('keydown', trap);
+    cookieSettingsCloseHandler = () => document.removeEventListener('keydown', trap);
+    window.setTimeout(() => panel.focus(), 0);
+  };
+  if (!readCookieConsent()) window.W1ZZYDEV_OPEN_COOKIE_SETTINGS();
+}
+
+function createCookieOption(name, copy, checked = false, disabled = false, i18nKey = name) {
+  const wrap = document.createElement('label');
+  wrap.className = 'cookie-option';
+  const input = document.createElement('input');
+  input.type = 'checkbox';
+  input.name = name;
+  input.checked = checked;
+  input.disabled = disabled;
+  const text = document.createElement('span');
+  text.className = 'cookie-option-copy';
+  const strong = document.createElement('strong');
+  strong.dataset.cookieI18n = `${i18nKey}.title`;
+  setLocalizedText(strong, copy.title);
+  const small = document.createElement('small');
+  small.dataset.cookieI18n = `${i18nKey}.description`;
+  setLocalizedText(small, copy.description);
+  text.append(strong, small);
+  wrap.append(input, text);
+  return { wrap, input };
+}
+
+function cookieActionButton(kind, copy) {
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = kind ? `button ${kind}` : 'button';
+  const key = Object.entries(cookieConsentCopy).find(([, value]) => value === copy)?.[0];
+  if (key) button.dataset.cookieI18n = key;
+  setLocalizedText(button, copy);
+  return button;
+}
+function initializeLegalUi() {
+  addLegalFooterLinks();
+  ensureCountrySelectors();
+  ensureLegalFormConsents();
+  reportMissingLegalData();
+  applyCookieConsentUi();
+}
+initializeLegalUi();
 function cleanFormValue(value, maxLength = 1200) {
   return String(value || '').replace(/\s+/g, ' ').trim().slice(0, maxLength);
 }
@@ -418,6 +809,40 @@ async function submitLeadToSupabase(payload) {
   return { submissionKey };
 }
 
+let leadSubmissionProviderPromise;
+function loadLeadSubmissionScript() {
+  if (window.W1ZZYDEVLeadSubmission) return Promise.resolve(window.W1ZZYDEVLeadSubmission);
+  if (!leadSubmissionProviderPromise) {
+    leadSubmissionProviderPromise = new Promise((resolve, reject) => {
+      const script = document.createElement('script');
+      script.src = '/assets/js/lead-submission.js';
+      script.async = true;
+      script.onload = () => resolve(window.W1ZZYDEVLeadSubmission);
+      script.onerror = () => reject(new Error('Lead submission provider is unavailable'));
+      document.head.appendChild(script);
+    });
+  }
+  return leadSubmissionProviderPromise;
+}
+
+function selectedCountryValue(formElement) {
+  return cleanFormValue(formElement?.elements?.country?.value || formElement?.querySelector('[name="country"]')?.value || '', 64);
+}
+
+function leadMetadata(formElement, formId) {
+  return {
+    formId,
+    page: location.pathname,
+    referrerCategory: document.referrer ? 'external' : 'direct'
+  };
+}
+
+async function submitLead(payload) {
+  const api = await loadLeadSubmissionScript();
+  const provider = api.createProvider({ legacySubmit: submitLeadToSupabase });
+  return provider.submit(payload);
+}
+
 const form = $('#project-form');
 let lastLeadSubmissionKey = '';
 updateContactDetailUI(form);
@@ -440,6 +865,8 @@ form?.addEventListener('submit', async event => {
   if (!form.reportValidity()) return;
   const data = new FormData(form);
   const status = $('#form-status');
+  if (!validateCountrySelection(form, status)) return;
+  if (!validateLegalConsent(form, status)) return;
   const button = $('button[type="submit"]', form);
   const nextActions = $('#lead-next-actions');
   nextActions?.classList.add('hidden');
@@ -464,17 +891,29 @@ form?.addEventListener('submit', async event => {
   if (button) button.disabled = true;
   const submissionKey = window.crypto?.randomUUID ? window.crypto.randomUUID() : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
   try {
-    const createdLead = await submitLeadToSupabase({ name, contact, contactMethod, preferredChannel: contactMethod, projectType: type, description: task, source: `contact:${contactMethod}`, website: cleanFormValue(data.get('website'), 120), submissionKey });
-    lastLeadSubmissionKey = createdLead.submissionKey || submissionKey;
+    const createdLead = await submitLead({
+      legacyPayload: { name, contact, contactMethod, preferredChannel: contactMethod, projectType: type, description: task, source: `contact:${contactMethod}`, website: cleanFormValue(data.get('website'), 120), submissionKey },
+      name,
+      contactType: contactMethod,
+      contactValue: contact,
+      message: task,
+      country: selectedCountryValue(form),
+      consentId: 'frontend-contact-consent',
+      source: `contact:${contactMethod}`,
+      language: lang,
+      clientRequestId: submissionKey,
+      metadata: leadMetadata(form, 'project-form')
+    });
+    lastLeadSubmissionKey = createdLead.data?.submissionKey || createdLead.submissionKey || submissionKey;
     navigator.clipboard?.writeText(discussionText).catch(() => {});
     updateChannelActionLinks(nextActions, discussionText, `W1ZZYDEV — ${type}`);
     form.reset();
     updateContactDetailUI(form);
     nextActions?.classList.remove('hidden');
     setFormStatus(status, lang === 'ru' ? 'Заявка принята. Продолжим обсуждение здесь.' : 'Request accepted. We can continue here.');
-    await attachLeadToUniversalChat({ submissionKey: lastLeadSubmissionKey, name, contact, type, task, channel });
+    if (createdLead.provider !== 'new_api') await attachLeadToUniversalChat({ submissionKey: lastLeadSubmissionKey, name, contact, type, task, channel });
   } catch (error) {
-    setFormStatus(status, (lang === 'ru' ? 'Не удалось сохранить заявку в Supabase: ' : 'Could not save the request in Supabase: ') + String(error.message || error), 'error');
+    setFormStatus(status, error.messageRu && error.messageEn ? (lang === 'ru' ? error.messageRu : error.messageEn) : (lang === 'ru' ? 'Не удалось сохранить заявку в Supabase: ' : 'Could not save the request in Supabase: ') + String(error.message || error), 'error');
   } finally {
     if (button) button.disabled = false;
   }
@@ -492,6 +931,8 @@ homeProjectForm?.addEventListener('submit', async event => {
   if (!homeProjectForm.reportValidity()) return;
   const data = new FormData(homeProjectForm);
   const status = $('#home-form-status');
+  if (!validateCountrySelection(homeProjectForm, status)) return;
+  if (!validateLegalConsent(homeProjectForm, status)) return;
   const button = $('button[type="submit"]', homeProjectForm);
   if (hasSpamSignal(homeProjectForm)) {
     setFormStatus(status, lang === 'ru' ? 'Спасибо. Заявка принята.' : 'Thank you. The request has been accepted.');
@@ -510,10 +951,22 @@ homeProjectForm?.addEventListener('submit', async event => {
   if (button) button.disabled = true;
   const submissionKey = window.crypto?.randomUUID ? window.crypto.randomUUID() : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
   try {
-    const created = await submitLeadToSupabase({ name, contact, projectType: type, description: task, source: 'homepage', website: cleanFormValue(data.get('website'), 120), submissionKey });
+    const created = await submitLead({
+      legacyPayload: { name, contact, projectType: type, description: task, source: 'homepage', website: cleanFormValue(data.get('website'), 120), submissionKey },
+      name,
+      contactType: 'email',
+      contactValue: contact,
+      message: task,
+      country: selectedCountryValue(homeProjectForm),
+      consentId: 'frontend-home-consent',
+      source: 'homepage',
+      language: lang,
+      clientRequestId: submissionKey,
+      metadata: leadMetadata(homeProjectForm, 'home-project-form')
+    });
     navigator.clipboard?.writeText(message).catch(() => {});
     setFormStatus(status, lang === 'ru' ? 'Спасибо. Заявка создана, продолжим обсуждение в чате.' : 'Thank you. The request was created; we can continue in chat.');
-    await attachLeadToUniversalChat({ submissionKey: created.submissionKey || submissionKey, name, contact, type, task });
+    if (created.provider !== 'new_api') await attachLeadToUniversalChat({ submissionKey: created.data?.submissionKey || created.submissionKey || submissionKey, name, contact, type, task });
     homeProjectForm.reset();
   } catch (error) {
     setFormStatus(status, lang === 'ru' ? 'Не удалось отправить заявку на сервер. Попробуйте ещё раз или напишите через контакты ниже.' : 'Could not submit the request to the server. Please try again or use the contact links below.', 'error');
@@ -558,6 +1011,7 @@ const publicReviewFallbacks = [
   {
     id: 'featured-daria-gorodnichaya',
     name: 'Дарья Городничая',
+    nameEn: 'Daria Gorodnichaya',
     company: 'Дизайнер',
     companyEn: 'Designer',
     rating: 5,
@@ -651,19 +1105,75 @@ const universalChatState = {
   ratingSubmitted: false,
   sending: false,
   toastTimer: 0,
-  category: 'question'
+  category: 'question',
+  locale: lang === 'en' ? 'en' : 'ru'
 };
+chatLocaleSyncReady = true;
 const chatAttachmentBucket = 'chat-attachments';
 const chatAttachmentMaxBytes = 10 * 1024 * 1024;
-const chatAttachmentAllowedTypes = new Set([
-  'image/jpeg',
-  'image/png',
-  'image/webp',
-  'image/gif',
-  'application/pdf',
-  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-]);
+const chatAttachmentAllowedTypes = Object.freeze({
+  jpg: 'image/jpeg',
+  jpeg: 'image/jpeg',
+  png: 'image/png',
+  webp: 'image/webp',
+  pdf: 'application/pdf',
+  docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+});
+const chatAttachmentDangerousExtensions = new Set(['html', 'htm', 'svg', 'js', 'mjs', 'exe', 'dmg', 'pkg', 'zip']);
+const chatAttachmentPreviewUrls = new WeakMap();
+const chatTexts = {
+  ru: {
+    assistantGreeting: 'Здравствуйте! Я помощник W1ZZYDEV. Ваше сообщение уже передано специалисту. Пока он подключается, я могу ответить на частые вопросы.',
+    attachmentUploadFailed: 'Не удалось загрузить файл. Попробуйте ещё раз.',
+    attachmentUnsupported: 'Этот формат файла не поддерживается.',
+    attachmentTooLarge: 'Размер файла превышает допустимый лимит.',
+    retry: 'Повторить',
+    delete: 'Удалить',
+    sending: 'отправка',
+    failedStatus: 'Не удалось отправить. Попробуйте ещё раз.',
+    messageSendFailed: 'Не удалось отправить сообщение. Попробуйте ещё раз.',
+    messageSent: 'Сообщение отправлено',
+    tooManyMessages: 'Слишком много сообщений подряд. Подождите несколько секунд.',
+    retryCheckFile: 'Проверьте файл и отправьте ещё раз.',
+    dialogReady: 'Диалог создан. Напишите первое сообщение.',
+    ratingThanks: 'Спасибо за оценку. Можно оставить публичный отзыв на странице отзывов.',
+    leaveReview: 'Оставить публичный отзыв',
+    quickLabel: 'Быстрые ответы',
+    quick: {
+      pricing: 'Стоимость разработки',
+      timeline: 'Сроки проекта',
+      process: 'Как проходит работа',
+      support: 'Поддержка сайта',
+      specialist: 'Связаться со специалистом'
+    }
+  },
+  en: {
+    assistantGreeting: 'Hello! I’m the W1ZZYDEV assistant. Your message has already been forwarded to a specialist. While they are joining the conversation, I can help with common questions.',
+    attachmentUploadFailed: 'The file could not be uploaded. Please try again.',
+    attachmentUnsupported: 'This file format is not supported.',
+    attachmentTooLarge: 'The file exceeds the allowed size limit.',
+    retry: 'Retry',
+    delete: 'Delete',
+    sending: 'sending',
+    failedStatus: 'Could not send. Please try again.',
+    messageSendFailed: 'Could not send the message. Please try again.',
+    messageSent: 'Message sent',
+    tooManyMessages: 'Too many messages in a row. Please wait a few seconds.',
+    retryCheckFile: 'Check the file and send again.',
+    dialogReady: 'The dialog is ready. Send the first message.',
+    ratingThanks: 'Thank you for the rating. You can leave a public review on the reviews page.',
+    leaveReview: 'Leave a public review',
+    quickLabel: 'Quick replies',
+    quick: {
+      pricing: 'Development cost',
+      timeline: 'Project timeline',
+      process: 'How the process works',
+      support: 'Website support',
+      specialist: 'Contact a specialist'
+    }
+  }
+};
 const chatNotificationState = {
   unread: 0,
   originalTitle: document.title,
@@ -690,6 +1200,20 @@ const chatStatusLabels = {
   in_progress: { ru: 'В работе', en: 'In progress' },
   closed: { ru: 'Закрыт', en: 'Closed' }
 };
+function normalizeChatLocale(value) {
+  return value === 'en' ? 'en' : 'ru';
+}
+function currentChatLocale() {
+  return normalizeChatLocale(universalChatState.locale || lang);
+}
+function chatText(key, locale = currentChatLocale()) {
+  return chatTexts[normalizeChatLocale(locale)]?.[key] || chatTexts.ru[key] || '';
+}
+function syncEmptyChatLocaleWithInterface() {
+  if (!universalChatState.tokenHash && !universalChatState.conversationId && !(universalChatState.messages || []).length) {
+    universalChatState.locale = normalizeChatLocale(lang);
+  }
+}
 const assistantResponseProvider = {
   replies: {
     pricing: {
@@ -713,12 +1237,13 @@ const assistantResponseProvider = {
       en: 'A specialist will join the conversation.'
     }
   },
-  get(key) {
-    return this.replies[key]?.[lang] || this.replies[key]?.ru || '';
+  get(key, locale = currentChatLocale()) {
+    return this.replies[key]?.[normalizeChatLocale(locale)] || this.replies[key]?.ru || '';
   }
 };
 function chatLabel(map, key) {
-  return map[key]?.[lang] || map[key]?.ru || key || '—';
+  const locale = currentChatLocale();
+  return map[key]?.[locale] || map[key]?.ru || key || '—';
 }
 function createClientMessageId(prefix = 'msg') {
   return `${prefix}-${Date.now()}-${crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(16).slice(2)}`;
@@ -822,6 +1347,45 @@ function safeFileName(name = 'file') {
   const cleaned = String(name || 'file').normalize('NFKD').replace(/[^\w.\- ]+/g, '').trim().replace(/\s+/g, '-');
   return cleaned.slice(0, 120) || 'file';
 }
+function chatFileParts(name = '') {
+  const safe = safeFileName(name || 'file');
+  const parts = safe.toLowerCase().split('.').filter(Boolean);
+  return { safe, parts, extension: parts.at(-1) || '' };
+}
+function chatAttachmentUserError(key) {
+  const error = new Error(chatText(key));
+  error.userMessageKey = key;
+  return error;
+}
+function chatAttachmentErrorMessage(error) {
+  return chatText(error?.userMessageKey || 'attachmentUploadFailed');
+}
+function logChatAttachmentFailure(stage, error, details = {}) {
+  console.warn('[W1ZZYDEV CHAT ATTACHMENT]', {
+    stage,
+    code: error?.code || error?.name || '',
+    httpStatus: error?.status || error?.statusCode || '',
+    bucket: chatAttachmentBucket,
+    mime: details.mime || '',
+    size: details.size || '',
+    path: details.path || '',
+    requestId: details.requestId || ''
+  });
+}
+function revokeChatFilePreview(input) {
+  const url = input ? chatAttachmentPreviewUrls.get(input) : '';
+  if (url) URL.revokeObjectURL(url);
+  if (input) chatAttachmentPreviewUrls.delete(input);
+}
+function clearChatFilePreview(input) {
+  const preview = input?.closest('form')?.querySelector('[data-file-preview]');
+  revokeChatFilePreview(input);
+  if (preview) {
+    preview.replaceChildren();
+    preview.classList.add('hidden');
+  }
+  if (input) input.value = '';
+}
 function attachmentIcon(attachment) {
   if (attachment.kind === 'image') return 'IMG';
   if (/pdf/i.test(attachment.mime_type || '')) return 'PDF';
@@ -855,17 +1419,20 @@ function renderMessageBody(message) {
 }
 function validateChatFile(file) {
   if (!file) return null;
-  if (!chatAttachmentAllowedTypes.has(file.type)) {
-    throw new Error(lang === 'ru' ? 'Этот тип файла не поддерживается.' : 'This file type is not supported.');
+  const { parts, extension } = chatFileParts(file.name);
+  const hasDangerousExtension = parts.some(part => chatAttachmentDangerousExtensions.has(part));
+  const expectedMime = chatAttachmentAllowedTypes[extension];
+  if (!expectedMime || hasDangerousExtension || file.type !== expectedMime) {
+    throw chatAttachmentUserError('attachmentUnsupported');
   }
   if (file.size > chatAttachmentMaxBytes) {
-    throw new Error(lang === 'ru' ? 'Файл больше 10 MB.' : 'The file is larger than 10 MB.');
+    throw chatAttachmentUserError('attachmentTooLarge');
   }
   return file;
 }
 async function compressChatImage(file) {
   validateChatFile(file);
-  if (!file.type.startsWith('image/') || file.type === 'image/gif' || file.size < 1024 * 1024) return file;
+  if (!file.type.startsWith('image/') || file.size < 1024 * 1024) return file;
   if (typeof createImageBitmap !== 'function') return file;
   const bitmap = await createImageBitmap(file);
   const maxSide = 1600;
@@ -881,28 +1448,37 @@ async function compressChatImage(file) {
   return new File([blob], file.name.replace(/\.(png|webp|jpeg|jpg)$/i, '.jpg'), { type: 'image/jpeg' });
 }
 async function uploadChatAttachment({ file, actor, conversationId, clientMessageId }) {
-  const processed = await compressChatImage(file);
-  validateChatFile(processed);
-  const client = await getSupabaseBrowserClient();
-  const prefix = actor === 'owner'
-    ? `owner/${conversationId}`
-    : `guest/${universalChatState.tokenHash}`;
-  const storagePath = `${prefix}/${clientMessageId}/${Date.now()}-${safeFileName(processed.name)}`;
-  const { error } = await client.storage
-    .from(chatAttachmentBucket)
-    .upload(storagePath, processed, {
-      contentType: processed.type,
-      cacheControl: '3600',
-      upsert: false
-    });
-  if (error) throw error;
-  return {
-    storage_path: storagePath,
-    file_name: safeFileName(processed.name),
-    mime_type: processed.type,
-    size_bytes: processed.size,
-    kind: processed.type.startsWith('image/') ? 'image' : 'document'
-  };
+  let processed = file;
+  let storagePath = '';
+  try {
+    processed = await compressChatImage(file);
+    validateChatFile(processed);
+    const client = await getSupabaseBrowserClient();
+    const { safe, extension } = chatFileParts(processed.name);
+    const uploadId = crypto.randomUUID ? crypto.randomUUID() : createClientMessageId('upload');
+    const prefix = actor === 'owner'
+      ? `owner/${conversationId}`
+      : `guest/${universalChatState.tokenHash}`;
+    storagePath = `${prefix}/${clientMessageId}/${uploadId}.${extension}`;
+    const { error } = await client.storage
+      .from(chatAttachmentBucket)
+      .upload(storagePath, processed, {
+        contentType: processed.type,
+        cacheControl: '3600',
+        upsert: false
+      });
+    if (error) throw error;
+    return {
+      storage_path: storagePath,
+      file_name: safe,
+      mime_type: processed.type,
+      size_bytes: processed.size,
+      kind: processed.type.startsWith('image/') ? 'image' : 'document'
+    };
+  } catch (error) {
+    logChatAttachmentFailure('upload', error, { mime: processed?.type || file?.type || '', size: processed?.size || file?.size || '', path: storagePath });
+    throw error.userMessageKey ? error : chatAttachmentUserError('attachmentUploadFailed');
+  }
 }
 async function signChatAttachment(attachment) {
   if (!attachment?.storage_path || attachment.signed_url) return attachment?.signed_url || '';
@@ -946,25 +1522,43 @@ async function hydrateVisibleAttachments() {
 function renderFilePreview(input) {
   const preview = input?.closest('form')?.querySelector('[data-file-preview]');
   if (!preview) return;
+  revokeChatFilePreview(input);
   const file = input.files?.[0];
   if (!file) {
-    preview.innerHTML = '';
+    preview.replaceChildren();
     preview.classList.add('hidden');
     return;
   }
   try {
     validateChatFile(file);
     preview.classList.remove('hidden');
+    preview.replaceChildren();
     if (file.type.startsWith('image/') && file.type !== 'image/gif') {
       const url = URL.createObjectURL(file);
-      preview.innerHTML = `<img src="${url}" alt=""><span><strong>${escapeHtml(file.name)}</strong><small>${escapeHtml(formatFileSize(file.size))}</small></span>`;
-      window.setTimeout(() => URL.revokeObjectURL(url), 6000);
+      chatAttachmentPreviewUrls.set(input, url);
+      const image = document.createElement('img');
+      image.src = url;
+      image.alt = '';
+      preview.appendChild(image);
     } else {
-      preview.innerHTML = `<span class="chat-attachment-type">${escapeHtml(attachmentIcon({ mime_type: file.type }))}</span><span><strong>${escapeHtml(file.name)}</strong><small>${escapeHtml(formatFileSize(file.size))}</small></span>`;
+      const type = document.createElement('span');
+      type.className = 'chat-attachment-type';
+      type.textContent = attachmentIcon({ mime_type: file.type });
+      preview.appendChild(type);
     }
+    const text = document.createElement('span');
+    const name = document.createElement('strong');
+    const size = document.createElement('small');
+    name.textContent = file.name;
+    size.textContent = formatFileSize(file.size);
+    text.append(name, size);
+    preview.appendChild(text);
   } catch (error) {
     preview.classList.remove('hidden');
-    preview.innerHTML = `<span>${escapeHtml(error.message)}</span>`;
+    preview.replaceChildren();
+    const text = document.createElement('span');
+    text.textContent = chatAttachmentErrorMessage(error);
+    preview.appendChild(text);
   }
 }
 function openAttachmentLightbox(src, alt = '') {
@@ -1004,8 +1598,10 @@ function readChatSession() {
 function saveChatSession(session) {
   sessionStorage.setItem(universalChatStorageKey, JSON.stringify({
     token: session.token,
+    tokenHash: session.tokenHash || '',
     conversationId: session.conversationId || '',
-    expiresAt: session.expiresAt || ''
+    expiresAt: session.expiresAt || '',
+    locale: normalizeChatLocale(session.locale || universalChatState.locale || lang)
   }));
 }
 function clearChatSession() {
@@ -1024,6 +1620,7 @@ function clearChatSession() {
   universalChatState.ownerLastSeenAt = '';
   universalChatState.ownerTypingUntil = '';
   universalChatState.ownerStatusLabel = '';
+  universalChatState.locale = normalizeChatLocale(lang);
 }
 function universalChatRoot() {
   return $('#w1zzy-chat');
@@ -1264,6 +1861,8 @@ function renderUniversalChat(notice = '') {
         ${chatExternalLinksHtml()}
       </form>`;
     setLang(lang);
+    ensureCountrySelectors(body);
+    ensureLegalFormConsents(body);
     $('[data-chat-start-form]', body)?.addEventListener('submit', event => {
       event.preventDefault();
       startUniversalChatFromForm(event.currentTarget).catch(error => {
@@ -1280,26 +1879,30 @@ function renderUniversalChat(notice = '') {
     ${isClosed ? `<button class="button" type="button" data-chat-new-conversation data-ru="Создать новое обращение" data-en="Create new request">Создать новое обращение</button>` : `
       <form class="support-widget-reply" data-chat-reply-form>
         <textarea name="message" maxlength="2000" data-chat-message data-placeholder-ru="Сообщение для W1ZZYDEV" data-placeholder-en="Message for W1ZZYDEV"></textarea>
-        <label class="chat-file-control"><input type="file" name="attachment" data-chat-file accept="image/jpeg,image/png,image/webp,image/gif,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"><span data-ru="Прикрепить файл" data-en="Attach file">Прикрепить файл</span></label>
+        <label class="chat-file-control"><input type="file" name="attachment" data-chat-file accept="image/jpeg,image/png,image/webp,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"><span data-ru="Прикрепить файл" data-en="Attach file">Прикрепить файл</span></label>
         <div class="chat-file-preview hidden" data-file-preview></div>
         <button class="button primary" type="submit" data-ru="Отправить" data-en="Send">Отправить</button>
         <button class="button" type="button" data-chat-close-conversation data-ru="Завершить обращение" data-en="End request">Завершить обращение</button>
       </form>`}`;
   setLang(lang);
+  ensureLegalFormConsents(body);
   updateClientPresenceLabel();
   const replyForm = $('[data-chat-reply-form]', body);
   if (isClosed && replyForm) {
     $$('textarea,button[type="submit"]', replyForm).forEach(node => { node.disabled = true; });
   }
-  renderUniversalChatMessages();
-  replyForm?.addEventListener('submit', event => {
-    event.preventDefault();
+	  renderUniversalChatMessages();
+	  replyForm?.addEventListener('submit', event => {
+	    event.preventDefault();
     sendUniversalChatMessage(event.currentTarget).catch(error => {
       const textarea = $('[data-chat-message]', event.currentTarget);
       const failedText = textarea?.dataset.failedText || '';
       if (failedText && !textarea.value) textarea.value = failedText;
+      const fileInput = $('[data-chat-file]', event.currentTarget);
       showChatToast(
-        lang === 'ru' ? 'Не удалось отправить сообщение. Попробуйте ещё раз.' : 'Could not send the message. Please try again.',
+        fileInput?.files?.[0] || error?.userMessageKey
+          ? chatAttachmentErrorMessage(error)
+          : chatText('messageSendFailed'),
         'error',
         5000,
         () => event.currentTarget.requestSubmit()
@@ -1347,19 +1950,21 @@ function renderUniversalChat(notice = '') {
   });
 }
 function renderAssistantQuickActions() {
-  return `<div class="support-widget-quick" data-assistant-actions aria-label="Быстрые ответы">
+  const locale = currentChatLocale();
+  const quick = chatTexts[locale].quick;
+  return `<div class="support-widget-quick" data-assistant-actions aria-label="${escapeHtml(chatText('quickLabel', locale))}">
     ${[
-      ['pricing', 'Стоимость разработки'],
-      ['timeline', 'Сроки проекта'],
-      ['process', 'Как проходит работа'],
-      ['support', 'Поддержка сайта'],
-      ['specialist', 'Связаться со специалистом']
+      ['pricing', quick.pricing],
+      ['timeline', quick.timeline],
+      ['process', quick.process],
+      ['support', quick.support],
+      ['specialist', quick.specialist]
     ].map(([value, label]) => `<button type="button" data-assistant-action="${value}">${escapeHtml(label)}</button>`).join('')}
   </div>`;
 }
 function renderUniversalChatRating() {
   if (universalChatState.ratingSubmitted) {
-    return `<div class="support-widget-note">${escapeHtml(lang === 'ru' ? 'Спасибо за оценку. Можно оставить публичный отзыв на странице отзывов.' : 'Thank you for the rating. You can leave a public review on the reviews page.')} <a href="/reviews/?rating=5">${escapeHtml(lang === 'ru' ? 'Оставить публичный отзыв' : 'Leave a public review')}</a></div>`;
+    return `<div class="support-widget-note">${escapeHtml(chatText('ratingThanks'))} <a href="/reviews/?rating=5">${escapeHtml(chatText('leaveReview'))}</a></div>`;
   }
   return `<form class="support-widget-rating" data-chat-rating-form>
     <strong data-ru="Оцените помощь W1ZZYDEV" data-en="Rate W1ZZYDEV support">Оцените помощь W1ZZYDEV</strong>
@@ -1373,17 +1978,38 @@ function renderUniversalChatMessages() {
   if (!container) return;
   container.innerHTML = universalChatState.messages.map(message => `
     <article class="${messageClass(message)}">
-      <strong>${escapeHtml(chatLabel(chatSenderLabels, message.sender === 'client' ? 'client' : message.sender))}${message.pending ? ' · ...' : ''}${message.failed ? ' · ошибка' : ''}</strong>
+      <strong>${escapeHtml(chatLabel(chatSenderLabels, message.sender === 'client' ? 'client' : message.sender))}${message.pending ? ` · ${escapeHtml(chatText('sending'))}` : ''}</strong>
       ${renderMessageBody(message)}
-      <small>${new Date(message.created_at).toLocaleString(lang === 'ru' ? 'ru-RU' : 'en-US')}</small>
-    </article>`).join('') || adminEmpty(lang === 'ru' ? 'Диалог создан. Напишите первое сообщение.' : 'The dialog is ready. Send the first message.');
+      ${message.failed ? `<div class="message-status" role="status">${escapeHtml(message.error_message || chatText('failedStatus'))}<button type="button" data-chat-retry="${escapeHtml(message.client_message_id || '')}">${escapeHtml(chatText('retry'))}</button><button type="button" data-chat-delete-unsent="${escapeHtml(message.client_message_id || '')}">${escapeHtml(chatText('delete'))}</button></div>` : ''}
+      <small>${new Date(message.created_at).toLocaleString(currentChatLocale() === 'ru' ? 'ru-RU' : 'en-US')}</small>
+    </article>`).join('') || adminEmpty(chatText('dialogReady'));
   container.scrollTop = container.scrollHeight;
+  container.querySelectorAll('[data-chat-delete-unsent]').forEach(button => {
+    button.addEventListener('click', () => {
+      const clientMessageId = button.dataset.chatDeleteUnsent || '';
+      universalChatState.messages = universalChatState.messages.filter(message => message.client_message_id !== clientMessageId);
+      renderUniversalChatMessages();
+    });
+  });
+  container.querySelectorAll('[data-chat-retry]').forEach(button => {
+    button.addEventListener('click', () => {
+      const failed = universalChatState.messages.find(message => message.client_message_id === button.dataset.chatRetry);
+      const form = $('[data-chat-reply-form]');
+      const textarea = $('[data-chat-message]', form);
+      if (failed?.body && textarea && !textarea.value) textarea.value = failed.body;
+      universalChatState.messages = universalChatState.messages.filter(message => message.client_message_id !== button.dataset.chatRetry);
+      renderUniversalChatMessages();
+      showChatToast(chatText('retryCheckFile'), 'error', 4000);
+    });
+  });
   hydrateVisibleAttachments().catch(() => {});
 }
 async function startUniversalChat(payload) {
   const token = createGuestToken();
   const tokenHash = await hashGuestToken(token);
   const clientMessageId = createClientMessageId('guest');
+  const locale = normalizeChatLocale(payload.locale || universalChatState.locale || lang);
+  universalChatState.locale = locale;
   const result = await supabaseRequest('/rest/v1/rpc/chat_guest_start', {
     method: 'POST',
     headers: { Prefer: 'return=representation' },
@@ -1402,14 +2028,19 @@ async function startUniversalChat(payload) {
   universalChatState.token = token;
   universalChatState.tokenHash = tokenHash;
   universalChatState.conversationId = data?.conversation_id || '';
-  saveChatSession({ token, tokenHash, conversationId: universalChatState.conversationId, expiresAt: data?.expires_at || '' });
+  saveChatSession({ token, tokenHash, conversationId: universalChatState.conversationId, expiresAt: data?.expires_at || '', locale });
   const messages = await loadUniversalChatMessages();
+  if (!messages.some(message => message.sender === 'assistant' && message.body === chatText('assistantGreeting', locale))) {
+    upsertMessage({ client_message_id: createClientMessageId('assistant-greeting'), sender: 'assistant', body: chatText('assistantGreeting', locale), pending: true });
+  }
   const sourceMessage = messages.find(message => message.client_message_id === clientMessageId);
   requestAiAssistant({ messageId: sourceMessage?.id || '', clientMessageId }).catch(() => {});
   startUniversalChatSync();
   return data;
 }
 async function startUniversalChatFromForm(formElement) {
+  if (!validateCountrySelection(formElement, $('[data-chat-status]', formElement))) return;
+  if (!validateLegalConsent(formElement, $('[data-chat-status]', formElement))) return;
   if (isRateLimited('w1zzydev-chat-start-last')) {
     setFormStatus($('[data-chat-status]', formElement), lang === 'ru' ? 'Подождите немного перед созданием нового обращения.' : 'Please wait before creating another request.', 'error');
     return;
@@ -1419,11 +2050,13 @@ async function startUniversalChatFromForm(formElement) {
   button.disabled = true;
   try {
     universalChatState.category = cleanFormValue(data.get('category'), 40) || 'question';
+    universalChatState.locale = normalizeChatLocale(lang);
     await startUniversalChat({
       name: data.get('name'),
       contact: data.get('contact'),
       category: universalChatState.category,
-      message: data.get('message')
+      message: data.get('message'),
+      locale: universalChatState.locale
     });
     renderUniversalChat();
   } finally {
@@ -1469,7 +2102,7 @@ async function loadUniversalChatMessages() {
 }
 async function sendUniversalChatMessage(formElement) {
   if (isSoftSpamLimited('w1zzydev-chat-message-burst')) {
-    showChatToast(lang === 'ru' ? 'Слишком много сообщений подряд. Подождите несколько секунд.' : 'Too many messages in a row. Please wait a few seconds.', 'error', 4000);
+    showChatToast(chatText('tooManyMessages'), 'error', 4000);
     return;
   }
   const formData = new FormData(formElement);
@@ -1483,7 +2116,7 @@ async function sendUniversalChatMessage(formElement) {
   const optimistic = normalizeChatMessage({
     client_message_id: clientMessageId,
     sender: 'client',
-    body: body || (file?.name || ''),
+    body,
     attachments: file ? [{ id: `local-${clientMessageId}`, file_name: file.name, size_bytes: file.size, mime_type: file.type, kind: file.type.startsWith('image/') ? 'image' : 'document' }] : [],
     pending: true
   });
@@ -1497,15 +2130,15 @@ async function sendUniversalChatMessage(formElement) {
       : await supabaseRequest('/rest/v1/rpc/chat_guest_send', {
           method: 'POST',
           headers: { Prefer: 'return=representation' },
-          body: JSON.stringify({ p_guest_token_hash: universalChatState.tokenHash, p_body: body, p_client_message_id: clientMessageId })
-        });
+	          body: JSON.stringify({ p_guest_token_hash: universalChatState.tokenHash, p_body: body, p_client_message_id: clientMessageId })
+	        });
     const savedMessages = (Array.isArray(result) ? result : [result]).filter(Boolean);
     savedMessages.forEach(message => upsertMessage(message));
     if (!savedMessages.some(message => message.client_message_id === clientMessageId)) {
       upsertMessage({ ...optimistic, delivery_status: 'sent', pending: false, failed: false });
     }
     formElement.reset();
-    renderFilePreview(fileInput);
+    clearChatFilePreview(fileInput);
     if (textarea) textarea.dataset.failedText = '';
     universalChatState.realtimeChannel?.send?.({
       type: 'broadcast',
@@ -1525,9 +2158,9 @@ async function sendUniversalChatMessage(formElement) {
         conversationId: universalChatState.conversationId || ''
       });
     });
-    showChatToast(lang === 'ru' ? 'Сообщение отправлено' : 'Message sent', 'success', 2600);
+    showChatToast(chatText('messageSent'), 'success', 2600);
   } catch (error) {
-    upsertMessage({ ...optimistic, pending: false, failed: true });
+    upsertMessage({ ...optimistic, pending: false, failed: true, error_message: file ? chatAttachmentErrorMessage(error) : null });
     renderUniversalChatMessages();
     throw error;
   } finally {
@@ -1563,7 +2196,8 @@ function assistantActionQuestion(action) {
     support: { ru: 'Какая поддержка сайта доступна?', en: 'What website support is available?' },
     specialist: { ru: 'Хочу связаться со специалистом', en: 'I want to speak with a specialist' }
   };
-  return labels[action]?.[lang] || labels[action]?.ru || action;
+  const locale = currentChatLocale();
+  return labels[action]?.[locale] || labels[action]?.ru || action;
 }
 async function handleAssistantAction(button) {
   if (!button || button.disabled) return;
@@ -1579,7 +2213,7 @@ async function sendAssistantQuickReply(action) {
   const clientMessageId = createClientMessageId('assistant-action');
   const questionId = createClientMessageId('assistant-question');
   const question = assistantActionQuestion(action);
-  const fallback = assistantResponseProvider.get(action);
+  const fallback = assistantResponseProvider.get(action, currentChatLocale());
   upsertMessage({ client_message_id: questionId, sender: 'client', body: question, pending: true });
   if (fallback) {
     upsertMessage({ client_message_id: clientMessageId, sender: 'assistant', body: fallback, pending: true });
@@ -1615,7 +2249,7 @@ async function requestAiAssistant({ messageId = '', clientMessageId = '' } = {})
       guest_token: universalChatState.token,
       message_id: messageId,
       client_message_id: clientMessageId,
-      locale: lang
+      locale: currentChatLocale()
     })
   });
   const data = await response.json().catch(() => ({}));
@@ -1687,6 +2321,7 @@ async function restoreUniversalChat() {
   universalChatState.token = session.token;
   universalChatState.tokenHash = session.tokenHash || await hashGuestToken(session.token);
   universalChatState.conversationId = session.conversationId || '';
+  universalChatState.locale = normalizeChatLocale(session.locale || lang);
   try {
     await loadUniversalChatMessages();
     renderUniversalChat();
@@ -2117,16 +2752,29 @@ async function saveReview(review) {
 }
 
 function createReviewCard(review) {
+  if (review?.id === 'featured-daria-gorodnichaya' || review?.name === 'Дарья Городничая') {
+    review = {
+      ...review,
+      nameEn: review.nameEn || 'Daria Gorodnichaya',
+      companyEn: review.companyEn || 'Designer',
+      textEn: review.textEn || publicReviewFallbacks[0].textEn
+    };
+  }
   const card = document.createElement('article');
   card.className = 'review-card reveal visible';
+  const displayName = lang === 'en' && review.nameEn ? review.nameEn : review.name;
   const top = document.createElement('div');
   top.className = 'review-top';
   const avatar = document.createElement('span');
   avatar.className = 'review-avatar';
-  avatar.textContent = review.name.trim().charAt(0).toUpperCase();
+  avatar.textContent = displayName.trim().charAt(0).toUpperCase();
   const identity = document.createElement('div');
   const name = document.createElement('h3');
-  name.textContent = review.name;
+  if (review.nameEn) {
+    name.dataset.ru = review.name;
+    name.dataset.en = review.nameEn;
+  }
+  name.textContent = displayName;
   identity.appendChild(name);
   if (review.company) {
     const company = document.createElement('small');
@@ -2278,6 +2926,9 @@ async function loadClientMessages(conversationId) {
 
 clientLoginForm?.addEventListener('submit', async event => {
   event.preventDefault();
+  if (!clientLoginForm.reportValidity()) return;
+  if (!validateCountrySelection(clientLoginForm, $('#client-login-status'))) return;
+  if (!validateLegalConsent(clientLoginForm, $('#client-login-status'))) return;
   const email = cleanFormValue(new FormData(clientLoginForm).get('email'), 160);
   const button = $('button[type="submit"]', clientLoginForm);
   if (!isEmail(email)) {
@@ -2305,7 +2956,8 @@ $('#client-message-form')?.addEventListener('submit', async event => {
   if (!clientState.selectedConversationId) {
     setFormStatus($('#client-message-status'), lang === 'ru' ? 'Сначала выберите диалог.' : 'Choose a dialog first.', 'error');
     return;
-  }
+	  }
+  if (!validateLegalConsent(event.currentTarget, $('#client-message-status'))) return;
   const body = cleanMultilineValue(new FormData(event.currentTarget).get('message'), 2000);
   const button = $('button[type="submit"]', event.currentTarget);
   if (!body) return;
@@ -2334,6 +2986,36 @@ $('#client-logout')?.addEventListener('click', async () => {
 
 if (clientLoginForm) loadClientPortal().catch(() => setFormStatus($('#client-login-status'), lang === 'ru' ? 'Сессия не найдена. Войдите по magic link.' : 'No session found. Sign in with a magic link.', 'error'));
 
+const dataRequestForm = $('#data-request-form');
+dataRequestForm?.addEventListener('submit', async event => {
+  event.preventDefault();
+  if (!dataRequestForm.reportValidity()) return;
+  const status = $('#data-request-status');
+  if (!validateLegalConsent(dataRequestForm, status)) return;
+  const data = new FormData(dataRequestForm);
+  const button = $('button[type="submit"]', dataRequestForm);
+  if (button) button.disabled = true;
+  try {
+    await supabaseRequest('/rest/v1/rpc/create_data_subject_request', {
+      method: 'POST',
+      headers: { Prefer: 'return=minimal' },
+      body: JSON.stringify({
+        p_request_type: cleanFormValue(data.get('request_type'), 64),
+        p_subject_name: cleanFormValue(data.get('subject_name'), 80),
+        p_reply_contact: cleanFormValue(data.get('reply_contact'), 160),
+        p_description: cleanMultilineValue(data.get('description'), 2000),
+        p_consent_accepted: true
+      })
+    });
+    dataRequestForm.reset();
+    setFormStatus(status, lang === 'ru' ? 'Запрос создан. Ответ будет направлен по указанному email после разумной проверки личности.' : 'The request has been created. A response will be sent to the provided email after reasonable identity verification.');
+  } catch {
+    setFormStatus(status, lang === 'ru' ? 'Не удалось создать запрос. Используйте контакт сайта для обращения.' : 'Could not create the request. Use the site contact to submit your request.', 'error');
+  } finally {
+    if (button) button.disabled = false;
+  }
+});
+
 const supportTicketForm = $('#support-ticket-form');
 let lastSupportEmail = '';
 supportTicketForm?.addEventListener('submit', async event => {
@@ -2341,6 +3023,8 @@ supportTicketForm?.addEventListener('submit', async event => {
   if (!supportTicketForm.reportValidity()) return;
   const data = new FormData(supportTicketForm);
   const status = $('#support-status');
+  if (!validateCountrySelection(supportTicketForm, status)) return;
+  if (!validateLegalConsent(supportTicketForm, status)) return;
   const button = $('button[type="submit"]', supportTicketForm);
   if (hasSpamSignal(supportTicketForm)) {
     setFormStatus(status, lang === 'ru' ? 'Тикет принят.' : 'Ticket accepted.');
@@ -2402,6 +3086,8 @@ reviewForm?.addEventListener('submit', async event => {
   const data = new FormData(reviewForm);
   const status = $('#review-status');
   const button = $('button[type="submit"]', reviewForm);
+  if (!validateCountrySelection(reviewForm, status)) return;
+  if (!validateLegalConsent(reviewForm, status)) return;
   if (hasSpamSignal(reviewForm)) {
     setFormStatus(status, lang === 'ru' ? 'Спасибо! Отзыв отправлен на модерацию.' : 'Thank you! Your review was sent for moderation.');
     reviewForm.reset();
@@ -2795,11 +3481,11 @@ function renderAdminMessageHistory() {
   const shouldStickToBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 96;
   container.innerHTML = activeAdminMessages().map(message => `
     <article class="${messageClass(message)}">
-      <strong>${escapeHtml(chatLabel(chatSenderLabels, message.sender))}${message.pending ? ' · отправка...' : ''}${message.failed ? ' · ошибка' : ''}</strong>
+      <strong>${escapeHtml(chatLabel(chatSenderLabels, message.sender))}${message.pending ? ` · ${adminText('отправка...', 'sending...')}` : ''}${message.failed ? ` · ${adminText('ошибка', 'failed')}` : ''}</strong>
       ${renderMessageBody(message)}
       ${message.failed ? `<div class="admin-actions"><button class="button small" type="button" data-retry-owner-message="${escapeHtml(message.client_message_id)}">${adminText('Повторить', 'Retry')}</button><button class="button small delete-review" type="button" data-remove-local-message="${escapeHtml(message.client_message_id)}">${adminText('Удалить локально', 'Remove locally')}</button></div>` : ''}
       ${message.error_message ? `<small>${escapeHtml(message.error_message)}</small>` : ''}
-      <small>${new Date(message.created_at).toLocaleString('ru-RU')}</small>
+      <small>${new Date(message.created_at).toLocaleString(lang === 'ru' ? 'ru-RU' : 'en-US')}</small>
     </article>
   `).join('') || adminEmpty(adminText('Сообщений пока нет.', 'There are no messages yet.'));
   hydrateVisibleAttachments().catch(() => {});
@@ -3196,16 +3882,16 @@ function renderAdminDialogs() {
     const category = dialog.category || (dialog.lead_id ? 'project' : dialog.support_ticket_id ? 'support' : 'question');
     const lastMessage = (adminChatState.messagesByConversation.get(dialog.id) || adminState.messages || []).filter(item => item.conversation_id === dialog.id).at(-1);
     const statusParts = [
-      chatStatusLabels[dialog.status]?.ru || dialog.status || 'new',
-      dialog.archived_at ? 'Архив' : '',
-      dialog.needs_human ? 'Нужен ответ' : '',
-      dialog.owner_joined_at ? 'Владелец подключился' : (dialog.assistant_mode === 'auto' ? 'AI отвечает' : '')
+      chatStatusLabels[dialog.status]?.[lang] || dialog.status || 'new',
+      dialog.archived_at ? adminText('Архив', 'Archive') : '',
+      dialog.needs_human ? adminText('Нужен ответ', 'Needs reply') : '',
+      dialog.owner_joined_at ? adminText('Владелец подключился', 'Owner joined') : (dialog.assistant_mode === 'auto' ? adminText('AI отвечает', 'AI replies') : '')
     ].filter(Boolean).join(' · ');
     return `<article class="admin-card dialog-item ${adminChatState.activeConversationId === dialog.id ? 'active' : ''}" data-dialog-id="${dialog.id}">
-      <div class="admin-card-head"><div><strong>${escapeHtml(client?.name || lead?.name || ticket?.requester_name || 'Клиент')}</strong><small>${escapeHtml(chatCategoryLabels[category]?.ru || category)}${dialog.priority === 'high' ? ' · Нужен ответ' : ''}</small></div><span class="moderation-badge">${Number(dialog.unread_for_owner || 0)}</span></div>
-      <p>${escapeHtml(lastMessage?.body || dialog.subject || 'Сообщений пока нет')}</p>
-      <dl><dt>Тема</dt><dd>${escapeHtml(dialog.subject || chatCategoryLabels[category]?.ru || 'Обращение')}</dd><dt>Заявка</dt><dd>${lead ? escapeHtml(lead.project_type) : 'нет'}</dd><dt>Страница</dt><dd>${escapeHtml(dialog.page_url || 'не указана')}</dd><dt>Статус</dt><dd>${escapeHtml(statusParts)}</dd><dt>ИИ</dt><dd>${escapeHtml(dialog.assistant_mode || 'auto')}</dd><dt>Последнее сообщение</dt><dd>${lastMessage?.created_at ? new Date(lastMessage.created_at).toLocaleString('ru-RU') : '—'}</dd></dl>
-      <div class="admin-actions"><select data-dialog-category="${dialog.id}">${Object.entries(chatCategoryLabels).map(([value,label]) => `<option value="${value}" ${category === value ? 'selected' : ''}>${escapeHtml(label.ru)}</option>`).join('')}</select><select data-dialog-status="${dialog.id}">${Object.entries(chatStatusLabels).map(([value,label]) => `<option value="${value}" ${(dialog.status || 'new') === value ? 'selected' : ''}>${escapeHtml(label.ru)}</option>`).join('')}</select></div>
+      <div class="admin-card-head"><div><strong>${escapeHtml(client?.name || lead?.name || ticket?.requester_name || adminText('Клиент', 'Client'))}</strong><small>${escapeHtml(chatCategoryLabels[category]?.[lang] || category)}${dialog.priority === 'high' ? ` · ${adminText('Нужен ответ', 'Needs reply')}` : ''}</small></div><span class="moderation-badge">${Number(dialog.unread_for_owner || 0)}</span></div>
+      <p>${escapeHtml(lastMessage?.body || dialog.subject || adminText('Сообщений пока нет', 'There are no messages yet'))}</p>
+      <dl><dt>${adminText('Тема', 'Subject')}</dt><dd>${escapeHtml(dialog.subject || chatCategoryLabels[category]?.[lang] || adminText('Обращение', 'Request'))}</dd><dt>${adminText('Заявка', 'Lead')}</dt><dd>${lead ? escapeHtml(lead.project_type) : adminText('нет', 'none')}</dd><dt>${adminText('Страница', 'Page')}</dt><dd>${escapeHtml(dialog.page_url || adminText('не указана', 'not specified'))}</dd><dt>${adminText('Статус', 'Status')}</dt><dd>${escapeHtml(statusParts)}</dd><dt>${adminText('ИИ', 'AI')}</dt><dd>${escapeHtml(dialog.assistant_mode || 'auto')}</dd><dt>${adminText('Последнее сообщение', 'Last message')}</dt><dd>${lastMessage?.created_at ? new Date(lastMessage.created_at).toLocaleString(lang === 'ru' ? 'ru-RU' : 'en-US') : '—'}</dd></dl>
+      <div class="admin-actions"><select data-dialog-category="${dialog.id}">${Object.entries(chatCategoryLabels).map(([value,label]) => `<option value="${value}" ${category === value ? 'selected' : ''}>${escapeHtml(label[lang])}</option>`).join('')}</select><select data-dialog-status="${dialog.id}">${Object.entries(chatStatusLabels).map(([value,label]) => `<option value="${value}" ${(dialog.status || 'new') === value ? 'selected' : ''}>${escapeHtml(label[lang])}</option>`).join('')}</select></div>
     </article>`;
   }).join('') || adminEmpty(adminText('Сообщений пока нет.', 'There are no messages yet.'));
 }
@@ -3272,9 +3958,9 @@ function renderAdminTickets() {
   container.innerHTML = adminState.tickets.map(ticket => {
     const client = adminState.clients.find(item => item.id === ticket.client_id);
     return `<article class="admin-card">
-      <div class="admin-card-head"><div><strong>${escapeHtml(ticket.subject)}</strong><small>${escapeHtml(client?.name || 'Клиент')}</small></div><span class="moderation-badge">${ticketStatusLabels[ticket.status] || escapeHtml(ticket.status)}</span></div>
+      <div class="admin-card-head"><div><strong>${escapeHtml(ticket.subject)}</strong><small>${escapeHtml(client?.name || adminText('Клиент', 'Client'))}</small></div><span class="moderation-badge">${ticketStatusLabels[ticket.status] || escapeHtml(ticket.status)}</span></div>
       <p>${escapeHtml(ticket.description)}</p>
-      <dl><dt>Проект</dt><dd>${escapeHtml(ticket.project || 'не указан')}</dd><dt>Приоритет</dt><dd>${escapeHtml(ticket.priority)}</dd><dt>Канал</dt><dd>${escapeHtml(channelLabel(ticket.contact_method || ticket.last_contact_channel || 'site_chat'))}</dd><dt>Дата</dt><dd>${new Date(ticket.created_at).toLocaleString('ru-RU')}</dd></dl>
+      <dl><dt>${adminText('Проект', 'Project')}</dt><dd>${escapeHtml(ticket.project || adminText('не указан', 'not specified'))}</dd><dt>${adminText('Приоритет', 'Priority')}</dt><dd>${escapeHtml(ticket.priority)}</dd><dt>${adminText('Канал', 'Channel')}</dt><dd>${escapeHtml(channelLabel(ticket.contact_method || ticket.last_contact_channel || 'site_chat'))}</dd><dt>${adminText('Дата', 'Date')}</dt><dd>${new Date(ticket.created_at).toLocaleString(lang === 'ru' ? 'ru-RU' : 'en-US')}</dd></dl>
       <div class="admin-actions"><select data-ticket-status="${ticket.id}">${Object.entries(ticketStatusLabels).map(([value,label]) => `<option value="${value}" ${ticket.status === value ? 'selected' : ''}>${label}</option>`).join('')}</select></div>
     </article>`;
   }).join('') || adminEmpty(adminText('Тикетов пока нет.', 'There are no tickets yet.'));
@@ -3807,13 +4493,17 @@ const canvas = document.createElement('canvas');
 canvas.className = 'matrix-canvas';
 canvas.setAttribute('aria-hidden', 'true');
 document.body.prepend(canvas);
+const customCursorEnabled = window.matchMedia('(pointer: fine)').matches && !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 const cursorCore = document.createElement('div');
 cursorCore.className = 'cursor-core';
 cursorCore.setAttribute('aria-hidden', 'true');
 const cursorRing = document.createElement('div');
 cursorRing.className = 'cursor-ring';
 cursorRing.setAttribute('aria-hidden', 'true');
-document.body.append(cursorCore, cursorRing);
+if (customCursorEnabled) {
+  document.body.append(cursorCore, cursorRing);
+  document.documentElement.classList.add('custom-cursor-ready');
+}
 
 const context = canvas.getContext('2d');
 const glyphs = '01{}[]<>/\\_W1ZZYDEV';
@@ -3875,6 +4565,7 @@ let ringY = cursorY;
 let lastTrail = 0;
 
 function moveCursor() {
+  if (!customCursorEnabled) return;
   ringX += (cursorX - ringX) * .26;
   ringY += (cursorY - ringY) * .26;
   cursorCore.style.transform = `translate3d(${cursorX}px,${cursorY}px,0) translate(-50%,-50%)`;
@@ -3894,21 +4585,24 @@ function spawnTrail(x, y) {
 }
 
 window.addEventListener('pointermove', event => {
+  if (!customCursorEnabled) return;
   cursorX = event.clientX;
   cursorY = event.clientY;
   document.body.style.setProperty('--cursor-x', `${cursorX}px`);
   document.body.style.setProperty('--cursor-y', `${cursorY}px`);
   const now = performance.now();
-  if (now - lastTrail > 58 && window.matchMedia('(pointer: fine)').matches) {
+  if (now - lastTrail > 58) {
     spawnTrail(cursorX, cursorY);
     lastTrail = now;
   }
 });
 
 document.addEventListener('pointerover', event => {
+  if (!customCursorEnabled) return;
   if (event.target.closest('a,button,input,select,textarea,label,[role="link"]')) document.body.classList.add('is-hovering');
 });
 document.addEventListener('pointerout', event => {
+  if (!customCursorEnabled) return;
   if (event.target.closest('a,button,input,select,textarea,label,[role="link"]')) document.body.classList.remove('is-hovering');
 });
 moveCursor();

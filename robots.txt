@@ -1,4 +1,8 @@
 User-agent: *
 Allow: /
+Disallow: /client/
+Disallow: /reviews/moderation/
+Disallow: /reviews/reset-password/
+Disallow: /secure-platform/
 
 Sitemap: https://w1zzydev.com/sitemap.xml

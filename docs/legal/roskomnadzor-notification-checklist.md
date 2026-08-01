@@ -1,0 +1,13 @@
+# roskomnadzor-notification-checklist
+
+Status: template, not approved.
+
+- Owner/operator details: TODO_REQUIRED
+- Scope: TODO_REQUIRED
+- Responsible person: TODO_REQUIRED
+- Legal basis: TODO_REQUIRED
+- Systems and processors: TODO_REQUIRED
+- Retention/destruction rules: TODO_REQUIRED
+- Review by Russian legal counsel: TODO_REQUIRED
+
+Important: Roskomnadzor notification is completed by the owner outside the website. Code changes cannot complete this requirement.
