@@ -424,7 +424,7 @@ function setTheme(theme) {
   themeButton?.setAttribute('aria-label', nextTheme === 'light' ? 'Включить тёмную тему' : 'Включить светлую тему');
   setFunctionalStorageValue('w1zzydev-theme-v2', nextTheme);
 }
-setTheme(getFunctionalStorageValue('w1zzydev-theme-v2', window.matchMedia?.('(prefers-color-scheme: light)').matches ? 'light' : 'dark'));
+setTheme(getFunctionalStorageValue('w1zzydev-theme-v2', 'dark'));
 themeButton?.addEventListener('click', () => setTheme(document.body.dataset.theme === 'light' ? 'dark' : 'light'));
 
 $$('.filter').forEach(button => button.addEventListener('click', () => {
@@ -559,12 +559,11 @@ function applyCookieConsentUi() {
     const panel = document.createElement('section');
     panel.className = 'cookie-consent-panel';
     panel.setAttribute('role', 'dialog');
-    panel.setAttribute('aria-modal', 'true');
+    panel.setAttribute('aria-modal', 'false');
     panel.setAttribute('aria-labelledby', 'cookie-consent-title');
     panel.setAttribute('aria-describedby', 'cookie-consent-description');
     panel.tabIndex = -1;
     document.body.classList.add('cookie-consent-open');
-    document.body.style.overflow = 'hidden';
 
     const title = document.createElement('h2');
     title.id = 'cookie-consent-title';
