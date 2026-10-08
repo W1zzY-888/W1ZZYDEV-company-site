@@ -432,7 +432,40 @@ $$('.filter').forEach(button => button.addEventListener('click', () => {
   button.classList.add('active');
   const filter = button.dataset.filter;
   $$('.project-item').forEach(card => { card.hidden = filter !== 'all' && card.dataset.category !== filter; });
+  const showcase = $('.project-showcase');
+  if (showcase) {
+    showcase.scrollTo({ left: 0, behavior: 'smooth' });
+    updateProjectCarouselButtons();
+  }
 }));
+
+const projectShowcase = $('.project-showcase');
+const projectCarouselButtons = $$('[data-project-nav]');
+function projectCarouselStep() {
+  if (!projectShowcase) return 0;
+  const firstCard = $('.project-item:not([hidden])', projectShowcase);
+  if (!firstCard) return 0;
+  const gap = parseFloat(getComputedStyle(projectShowcase).columnGap || getComputedStyle(projectShowcase).gap || '16') || 16;
+  return firstCard.getBoundingClientRect().width + gap;
+}
+function updateProjectCarouselButtons() {
+  if (!projectShowcase || !projectCarouselButtons.length) return;
+  const canScroll = projectShowcase.scrollWidth > projectShowcase.clientWidth + 2;
+  const maxScroll = Math.max(0, projectShowcase.scrollWidth - projectShowcase.clientWidth - 2);
+  projectCarouselButtons.forEach(button => {
+    const direction = button.dataset.projectNav;
+    button.disabled = !canScroll || (direction === 'prev' && projectShowcase.scrollLeft <= 2) || (direction === 'next' && projectShowcase.scrollLeft >= maxScroll);
+  });
+}
+projectCarouselButtons.forEach(button => button.addEventListener('click', () => {
+  if (!projectShowcase) return;
+  const direction = button.dataset.projectNav === 'prev' ? -1 : 1;
+  projectShowcase.scrollBy({ left: projectCarouselStep() * direction, behavior: 'smooth' });
+  window.setTimeout(updateProjectCarouselButtons, 320);
+}));
+projectShowcase?.addEventListener('scroll', () => window.requestAnimationFrame(updateProjectCarouselButtons), { passive: true });
+window.addEventListener('resize', updateProjectCarouselButtons);
+updateProjectCarouselButtons();
 
 const rateLimitWindow = 30000;
 const legalConfig = window.W1ZZYDEV_LEGAL_CONFIG || {};
