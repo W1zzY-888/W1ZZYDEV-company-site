@@ -613,3 +613,8 @@ body[data-theme="light"] .dialog-reply{background:linear-gradient(180deg,rgba(25
 @media(max-width:620px){.chat-toast-stack{right:12px;left:12px;bottom:86px;width:auto}.chat-lightbox{padding:12px}.chat-lightbox img{border-radius:14px}}
 
 .admin-inline-control{display:inline-flex;align-items:center;gap:7px;color:var(--muted);font:850 10px/1.1 monospace;text-transform:uppercase}.admin-inline-control select{min-height:40px}
+
+.project-cover.cover-styling,.case-cover.cover-styling{background:radial-gradient(circle at 18% 18%,rgba(255,244,229,.82),transparent 23%),radial-gradient(circle at 78% 28%,rgba(218,174,132,.66),transparent 31%),radial-gradient(circle at 55% 85%,rgba(99,230,186,.16),transparent 33%),linear-gradient(135deg,#110e0d,#3c2a22 42%,#7b604b)}
+.project-cover.cover-styling::before,.case-cover.cover-styling::before{background:linear-gradient(135deg,rgba(255,255,255,.12),rgba(255,255,255,.02));border-color:rgba(255,244,229,.22)}
+.project-cover.cover-styling::after,.case-cover.cover-styling::after{color:#fff8ef;text-shadow:0 18px 70px rgba(0,0,0,.42)}
+.project-card:hover .project-cover.cover-styling{filter:saturate(1.08) brightness(1.04)}
